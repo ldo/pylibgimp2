@@ -415,12 +415,20 @@ def param_from_ct(param) :
 #-
 
 libgimp2 = ct.cdll.LoadLibrary("libgimp-2.0.so.0")
+
+# from libgimp/gimp.h:
+
 libgimp2.gimp_main.argtypes = (ct.POINTER(GIMP.PlugInInfo), ct.c_int, ct.POINTER(ct.c_char_p))
 libgimp2.gimp_main.restype = ct.c_int
 libgimp2.gimp_quit.argtypes = ()
 libgimp2.gimp_quit.restype = None
 libgimp2.gimp_install_procedure.argtypes = (ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, GIMP.PDBProcType, ct.c_int, ct.c_int, ct.POINTER(GIMP.ParamDef), ct.POINTER(GIMP.ParamDef))
 libgimp2.gimp_install_procedure.restype = None
+
+# from libgimp/gimpplugin_pdb.h:
+
+libgimp2.gimp_plugin_menu_register.argtypes = (ct.c_char_p, ct.c_char_p)
+libgimp2.gimp_plugin_menu_register.restype = ct.c_bool
 
 #+
 # Higher-level stuff follows
@@ -467,6 +475,13 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
     c_return_vals = seq_to_ct(return_vals, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
     libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_menu_label, c_image_types, type, len(c_params), len(c_return_vals), c_params, c_return_vals)
 #end install_procedure
+
+def plugin_menu_register(procname, menu_item_name) :
+    c_procname = str_encode(procname)
+    c_menu_item_name = str_encode(menu_item_name)
+    return \
+        libgimp2.gimp_plugin_menu_register(c_procname, c_menu_item_name)
+#end plugin_menu_register
 
 def main(plugin_info : GIMP.PlugInInfo) :
     "to be invoked as your plugin mainline."
