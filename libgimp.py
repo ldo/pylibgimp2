@@ -154,6 +154,8 @@ class GIMP :
     RunProc = ct.CFUNCTYPE \
         (None, ct.c_char_p, ct.c_int, ct.POINTER(Param), ct.c_int, ct.POINTER(ct.POINTER(Param)))
         # (name, nparams, params, nreturn_vals, return_vals)
+    NO_INIT_PROC = InitProc(0)
+    NO_QUIT_PROC = QuitProc(0)
 
     class PlugInInfo(ct.Structure) :
         pass
@@ -322,31 +324,31 @@ def def_expect_type(expect_type) :
 class PARAMTYPE(enum.Enum) :
 
     # (argtype, fieldname, to_ct_conv, from_ct_conv)
-    INT32 = (GIMP.PDB_INT32, "d_int32", def_to_ct_int(32, True), ident),
-    INT16 = (GIMP.PDB_INT16, "d_int16", def_to_ct_int(16, True), ident),
-    INT8 = (GIMP.PDB_INT8, "d_int8", def_to_ct_int(8, False), ident),
-    FLOAT = (GIMP.PDB_FLOAT, "d_float", ct.c_double, ident),
-    STRING = (GIMP.PDB_STRING, "d_string", str_encode, str_decode),
-    INT32ARRAY = (GIMP.PDB_INT32ARRAY, "d_int32array", def_seq_to_ct(ct.c_int32), ct_to_seq),
-    INT16ARRAY = (GIMP.PDB_INT16ARRAY, "d_int16array", def_seq_to_ct(ct.c_int16), ct_to_seq),
-    INT8ARRAY = (GIMP.PDB_INT8ARRAY, "d_int8array", def_seq_to_ct(ct.c_uint8), ct_to_seq),
-    FLOATARRAY = (GIMP.PDB_FLOATARRAY, "d_floatarray", def_seq_to_ct(ct.c_double), ct_to_seq),
-    STRINGARRAY = (GIMP.PDB_STRINGARRAY, "d_stringarray", def_seq_to_ct(ct.c_char_p, conv = str_encode), def_ct_to_seq(str_decode)),
-    COLOURARRAY = (GIMP.PDB_COLOURARRAY, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident),
-    COLOUR = (GIMP.PDB_COLOUR, "d_colour", def_expect_type(GIMP.RGB), ident),
-    DISPLAY = (GIMP.PDB_DISPLAY, "d_display", def_to_ct_int(32, True), ident),
-    IMAGE = (GIMP.PDB_IMAGE, "d_image", def_to_ct_int(32, True), ident),
-    ITEM = (GIMP.PDB_ITEM, "d_item", def_to_ct_int(32, True), ident),
-    LAYER = (GIMP.PDB_LAYER, "d_layer", def_to_ct_int(32, True), ident),
+    INT32 = (GIMP.PDB_INT32, "d_int32", def_to_ct_int(32, True), ident)
+    INT16 = (GIMP.PDB_INT16, "d_int16", def_to_ct_int(16, True), ident)
+    INT8 = (GIMP.PDB_INT8, "d_int8", def_to_ct_int(8, False), ident)
+    FLOAT = (GIMP.PDB_FLOAT, "d_float", ct.c_double, ident)
+    STRING = (GIMP.PDB_STRING, "d_string", str_encode, str_decode)
+    INT32ARRAY = (GIMP.PDB_INT32ARRAY, "d_int32array", def_seq_to_ct(ct.c_int32), ct_to_seq)
+    INT16ARRAY = (GIMP.PDB_INT16ARRAY, "d_int16array", def_seq_to_ct(ct.c_int16), ct_to_seq)
+    INT8ARRAY = (GIMP.PDB_INT8ARRAY, "d_int8array", def_seq_to_ct(ct.c_uint8), ct_to_seq)
+    FLOATARRAY = (GIMP.PDB_FLOATARRAY, "d_floatarray", def_seq_to_ct(ct.c_double), ct_to_seq)
+    STRINGARRAY = (GIMP.PDB_STRINGARRAY, "d_stringarray", def_seq_to_ct(ct.c_char_p, conv = str_encode), def_ct_to_seq(str_decode))
+    COLOURARRAY = (GIMP.PDB_COLOURARRAY, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident)
+    COLOUR = (GIMP.PDB_COLOUR, "d_colour", def_expect_type(GIMP.RGB), ident)
+    DISPLAY = (GIMP.PDB_DISPLAY, "d_display", def_to_ct_int(32, True), ident)
+    IMAGE = (GIMP.PDB_IMAGE, "d_image", def_to_ct_int(32, True), ident)
+    ITEM = (GIMP.PDB_ITEM, "d_item", def_to_ct_int(32, True), ident)
+    LAYER = (GIMP.PDB_LAYER, "d_layer", def_to_ct_int(32, True), ident)
     # no enum for layer_mask?
-    CHANNEL = (GIMP.PDB_CHANNEL, "d_channel", def_to_ct_int(32, True), ident),
-    DRAWABLE = (GIMP.PDB_DRAWABLE, "d_drawable", def_to_ct_int(32, True), ident),
-    SELECTION = (GIMP.PDB_SELECTION, "d_selection", def_to_ct_int(32, True), ident),
-    VECTORS = (GIMP.PDB_VECTORS, "d_vectors", def_to_ct_int(32, True), ident),
+    CHANNEL = (GIMP.PDB_CHANNEL, "d_channel", def_to_ct_int(32, True), ident)
+    DRAWABLE = (GIMP.PDB_DRAWABLE, "d_drawable", def_to_ct_int(32, True), ident)
+    SELECTION = (GIMP.PDB_SELECTION, "d_selection", def_to_ct_int(32, True), ident)
+    VECTORS = (GIMP.PDB_VECTORS, "d_vectors", def_to_ct_int(32, True), ident)
     # no enum for d_unit?
-    PARASITE = (GIMP.PDB_PARASITE, "d_parasite", def_expect_type(GIMP.Parasite), ident),
+    PARASITE = (GIMP.PDB_PARASITE, "d_parasite", def_expect_type(GIMP.Parasite), ident)
     # no enum for d_tattoo?
-    STATUS = (GIMP.PDB_STATUS, "d_status", def_to_ct_enum(GIMP.PDB_CANCEL), ident),
+    STATUS = (GIMP.PDB_STATUS, "d_status", def_to_ct_enum(GIMP.PDB_CANCEL), ident)
 
     @property
     def code(self) :
@@ -446,7 +448,7 @@ def wrap_run_proc(run_proc) :
 #begin wrap_run_proc
     run_wrapper.__name__ = "wrap_%s" % run_proc.__name__
     return \
-        GIMP.QueryProc(run_wrapper)
+        GIMP.RunProc(run_wrapper)
 #end wrap_run_proc
 
 def install_procedure(name : str, blurb : str, help: str, author : str, copyright : str, date : str, menu_label : str, image_types : str, type : GIMP.PDBProcType, params, return_vals) :
@@ -461,8 +463,8 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
     c_menu_label = menu_label.encode()
     c_image_types = image_types.encode()
     save_strs = []
-    c_params = seq_to_ct(params, conv = lambda v : to_param_def(v, save_strs))
-    c_return_vals = seq_to_ct(return_vals, conv = lambda v : to_param_def(v, save_strs))
+    c_params = seq_to_ct(params, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
+    c_return_vals = seq_to_ct(return_vals, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
     libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_menu_label, c_image_types, type, len(c_params), len(c_return_vals), c_params, c_return_vals)
 #end install_procedure
 
