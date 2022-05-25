@@ -152,7 +152,7 @@ class GIMP :
     QuitProc = ct.CFUNCTYPE(None)
     QueryProc = ct.CFUNCTYPE(None)
     RunProc = ct.CFUNCTYPE \
-        (None, ct.c_char_p, ct.c_int, ct.POINTER(Param), ct.c_int, ct.POINTER(ct.POINTER(Param)))
+        (None, ct.c_char_p, ct.c_int, ct.POINTER(Param), ct.POINTER(ct.c_int), ct.POINTER(ct.POINTER(Param)))
         # (name, nparams, params, nreturn_vals, return_vals)
     NO_INIT_PROC = InitProc(0)
     NO_QUIT_PROC = QuitProc(0)
