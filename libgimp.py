@@ -140,7 +140,13 @@ class GIMP :
     #end ParamData
 
     class Param(ct.Structure) :
-        pass
+
+        def __repr__(self) :
+            "useful for debugging."
+            return \
+                "(%s, %s)" % (repr(self.type), repr(self.data))
+        #end __repr__
+
     Param._fields_ = \
         [
             ("type", PDBArgType),
