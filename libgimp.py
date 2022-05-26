@@ -604,6 +604,8 @@ libgimp2.gimp_drawable_levels.restype = ct.c_bool
 #-
 
 def procedural_db_proc_info(procname : str) :
+    "returns information about the specified procedure registered with the PDB," \
+    " if any, or None if no such procedure was found."
     c_procname = str_encode(procname)
     c_blurb = ct.c_char_p()
     c_help = ct.c_char_p()
