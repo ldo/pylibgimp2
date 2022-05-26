@@ -478,9 +478,21 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
     c_menu_label = menu_label.encode()
     c_image_types = image_types.encode()
     save_strs = []
-    c_params = seq_to_ct(params, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
-    c_return_vals = seq_to_ct(return_vals, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
-    libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_menu_label, c_image_types, type, len(c_params), len(c_return_vals), c_params, c_return_vals)
+    if params != None :
+        c_params = seq_to_ct(params, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
+        nr_params = len(params)
+    else :
+        c_params = None
+        nr_params = 0
+    #end if
+    if return_vals != None :
+        c_return_vals = seq_to_ct(return_vals, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
+        nr_return_vals = len(return_vals)
+    else :
+        c_return_vals = None
+        nr_return_vals = 0
+    #end if
+    libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_menu_label, c_image_types, type, nr_params, nr_return_vals, c_params, c_return_vals)
 #end install_procedure
 
 def plugin_menu_register(procname, menu_item_name) :
