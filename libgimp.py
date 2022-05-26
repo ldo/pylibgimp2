@@ -519,6 +519,20 @@ def param_to_ct(type, val) :
         GIMP.Param(type = type.code, data = paramdata)
 #end param_to_ct
 
+def params_to_ct(defs, vals) :
+    if len(vals) != len(defs) :
+        raise TypeError("expecting %d args, got %d" % (len(defs), len(vals)))
+    #end if
+    result = seq_to_ct \
+      (
+        seq = list(zip(defs, vals)),
+        ct_type = GIMP.Param,
+        conv = lambda v : param_to_ct(v[0]["type"], v[1])
+      )
+    return \
+        result
+#end params_to_ct
+
 def param_from_ct(param) :
     type = PARAMTYPE.from_code[param.type]
     return \
@@ -664,6 +678,73 @@ def procedural_db_proc_info(procname : str) :
     return \
         result
 #end procedural_db_proc_info
+
+class PDB :
+    "local cache of GIMP’s procedure database (PDB). You can call any" \
+    " procedure registered in the PDB as\n" \
+    "\n" \
+    "    return_vals = pdb.procname(args)\n" \
+    "\n" \
+    " where args and return_vals are sequences of argument/return values."
+
+    __slots__ = ("_procs",)
+
+    def __init__(self) :
+        self._procs = {}
+    #end __init__
+
+    def __getattr__(self, procname) :
+
+        def def_proc_wrapper(paramdefs, returndefs) :
+
+            c_procname = str_encode(procname)
+
+            def proc_wrapper(*args) :
+                c_args = params_to_ct(paramdefs, args)
+                c_nr_returns = ct.c_int()
+                c_returns = libgimp2.gimp_run_procedure2(c_procname, ct.byref(c_nr_returns), len(args), c_args)
+                returns = ct_to_seq \
+                  (
+                    arr = c_returns[:c_nr_returns.value],
+                    conv = param_from_ct
+                  )
+                libgimp2.gimp_destroy_params(c_returns, c_nr_returns.value)
+                status = returns[0]
+                if status != GIMP.PDB_SUCCESS :
+                    raise RuntimeError("procedure %s returned status %d" % (procname, status))
+                #end if
+                returns = returns[1:]
+                if len(returns) == 0 :
+                    returns = None
+                #end if
+                return \
+                    returns
+            #end proc_wrapper
+
+        #begin def_proc_wrapper
+            proc_wrapper.__name__ = procname
+            return \
+                proc_wrapper
+        #end def_proc_wrapper
+
+    #begin __getattr__
+        if procname not in self._procs :
+            procinfo = procedural_db_proc_info(procname)
+            if procinfo == None :
+                raise AttributeError("no such procedure registered as “%s”" % procname)
+            #end if
+            self._procs[procname] = def_proc_wrapper(procinfo["args"], procinfo["return_vals"])
+        #end if
+        return \
+            self._procs[procname]
+    #end __getattr__
+
+#end PDB
+
+pdb = PDB()
+  # After they made you...
+del PDB
+  # ... they broke the mould.
 
 def displays_flush() :
     libgimp2.gimp_displays_flush()
