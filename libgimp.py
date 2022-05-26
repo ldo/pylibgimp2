@@ -548,6 +548,11 @@ libgimp2.gimp_destroy_params.restype = None
 libgimp2.gimp_destroy_paramdefs.argtypes = (ct.POINTER(GIMP.ParamDef), ct.c_int)
 libgimp2.gimp_destroy_paramdefs.restype = None
 
+# from libgimp/gimpdisplay_pdb.h:
+
+libgimp2.gimp_displays_flush.argtypes = ()
+libgimp2.gimp_displays_flush.restype = None
+
 # from libgimp/gimpproceduraldb.h:
 
 libgimp2.gimp_procedural_db_proc_info.argtypes = (ct.c_char_p, ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(GIMP.PDBProcType), ct.POINTER(ct.c_int), ct.POINTER(ct.c_int), ct.POINTER(ct.POINTER(GIMP.ParamDef)), ct.POINTER(ct.POINTER(GIMP.ParamDef)))
@@ -583,6 +588,8 @@ libgimp2.gimp_image_add_layer.argtypes = (ct.c_int32, ct.c_int32, ct.c_int)
 libgimp2.gimp_image_add_layer.restype = ct.c_bool
 libgimp2.gimp_image_merge_down.argtypes = (ct.c_int32, ct.c_int32, GIMP.MergeType)
 libgimp2.gimp_image_merge_down.restype = ct.c_int32
+libgimp2.gimp_image_get_active_layer.argtypes = (ct.c_int32,)
+libgimp2.gimp_image_get_active_layer.restype = ct.c_int32
 
 # from libgimp/gimplayer_pdb.h:
 
@@ -657,6 +664,10 @@ def procedural_db_proc_info(procname : str) :
     return \
         result
 #end procedural_db_proc_info
+
+def displays_flush() :
+    libgimp2.gimp_displays_flush()
+#end displays_flush
 
 def wrap_run_proc(run_proc) :
     "creates a wrapper around the given Python function, which" \
