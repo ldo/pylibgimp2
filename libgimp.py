@@ -330,6 +330,7 @@ def def_expect_type(expect_type) :
 class PARAMTYPE(enum.Enum) :
 
     # (argtype, fieldname, to_ct_conv, from_ct_conv)
+    # FIXME: to_ct_conv routines for string pointers will need to stash ctype objects somewhere
     INT32 = (GIMP.PDB_INT32, "d_int32", def_to_ct_int(32, True), ident)
     INT16 = (GIMP.PDB_INT16, "d_int16", def_to_ct_int(16, True), ident)
     INT8 = (GIMP.PDB_INT8, "d_int8", def_to_ct_int(8, False), ident)
