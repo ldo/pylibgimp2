@@ -493,13 +493,17 @@ PARAMTYPE.BOUNDARY = PARAMTYPE.COLOURARRAY
 PARAMTYPE.REGION = PARAMTYPE.ITEM
 
 def to_param_def(paramdef, save_strs) :
+    c_type = paramdef["type"]
+    if isinstance(c_type, PARAMTYPE) :
+        c_type = c_type.code
+    #end if
     c_name = ct.c_char_p(paramdef["name"].encode())
     c_descr = ct.c_char_p(paramdef["description"].encode())
     save_strs.extend((c_name, c_descr))
     return \
         GIMP.ParamDef \
           (
-            type = paramdef["type"],
+            type = c_type,
             name = c_name,
             description = c_descr,
           )
