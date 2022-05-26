@@ -297,7 +297,7 @@ def def_c_char_p_encode(save_strs) :
         encode
 #end def_c_char_p_encode
 
-def seq_to_ct(seq, ct_type, *, conv = ident, zeroterm = False) :
+def seq_to_ct(seq, ct_type, conv = ident, zeroterm = False) :
     "extracts the elements of a Python sequence value into a ctypes array" \
     " of type ct_type, optionally applying the conv function to each value."
     nr_elts = len(seq)
@@ -312,7 +312,7 @@ def seq_to_ct(seq, ct_type, *, conv = ident, zeroterm = False) :
         result
 #end seq_to_ct
 
-def ct_to_seq(arr, *, conv = ident, strip_zeroterm = False) :
+def ct_to_seq(arr, conv = ident, strip_zeroterm = False) :
     if len(arr) > 0 and strip_zeroterm :
         assert arr[-1] == None
         arr = arr[:-1]
@@ -388,7 +388,7 @@ def def_seq_to_ct(ct_type, conv = ident, zeroterm = False) :
 
     def conv(val) :
         return \
-            seq_to_ct(val, ct_type, conv = conv, zeroterm = zeroterm)
+            seq_to_ct(val, ct_type, conv, zeroterm)
     #conv
 
 #begin def_seq_to_ct
@@ -401,7 +401,7 @@ def def_ct_to_seq(conv, strip_zeroterm = False) :
 
     def conv(val) :
         return \
-            ct_to_seq(val, conv = conv, strip_zeroterm = strip_zeroterm)
+            ct_to_seq(val, conv, strip_zeroterm)
     #end conv
 
 #begin def_ct_to_seq
@@ -439,7 +439,7 @@ class PARAMTYPE(enum.Enum) :
     INT16ARRAY = (GIMP.PDB_INT16ARRAY, "d_int16array", def_seq_to_ct(ct.c_int16), ct_to_seq)
     INT8ARRAY = (GIMP.PDB_INT8ARRAY, "d_int8array", def_seq_to_ct(ct.c_uint8), ct_to_seq)
     FLOATARRAY = (GIMP.PDB_FLOATARRAY, "d_floatarray", def_seq_to_ct(ct.c_double), ct_to_seq)
-    STRINGARRAY = (GIMP.PDB_STRINGARRAY, "d_stringarray", def_seq_to_ct(ct.c_char_p, conv = str_encode), def_ct_to_seq(str_decode))
+    STRINGARRAY = (GIMP.PDB_STRINGARRAY, "d_stringarray", def_seq_to_ct(ct.c_char_p, str_encode), def_ct_to_seq(str_decode))
     COLOURARRAY = (GIMP.PDB_COLOURARRAY, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident)
     COLOUR = (GIMP.PDB_COLOUR, "d_colour", def_expect_type(GIMP.RGB), ident)
     DISPLAY = (GIMP.PDB_DISPLAY, "d_display", def_to_ct_int(32, True), ident)
@@ -669,9 +669,9 @@ def wrap_run_proc(run_proc) :
     def run_wrapper(c_name, nparams, c_params, nreturn_vals, c_return_vals) :
         nonlocal last_return
         name = str_decode(c_name)
-        params = ct_to_seq(c_params[:nparams], conv = param_from_ct)
+        params = ct_to_seq(c_params[:nparams], param_from_ct)
         return_vals = run_proc(name, params)
-        last_return = seq_to_ct(return_vals, GIMP.Param, conv = lambda v : param_to_ct(v[0], v[1]))
+        last_return = seq_to_ct(return_vals, GIMP.Param, lambda v : param_to_ct(v[0], v[1]))
         nreturn_vals[0] = len(return_vals)
         c_return_vals[0] = last_return
     #end run_wrapper
@@ -695,14 +695,14 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
     c_image_types = image_types.encode()
     save_strs = []
     if params != None :
-        c_params = seq_to_ct(params, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
+        c_params = seq_to_ct(params, GIMP.ParamDef, lambda v : to_param_def(v, save_strs))
         nr_params = len(params)
     else :
         c_params = None
         nr_params = 0
     #end if
     if return_vals != None :
-        c_return_vals = seq_to_ct(return_vals, GIMP.ParamDef, conv = lambda v : to_param_def(v, save_strs))
+        c_return_vals = seq_to_ct(return_vals, GIMP.ParamDef, lambda v : to_param_def(v, save_strs))
         nr_return_vals = len(return_vals)
     else :
         c_return_vals = None
