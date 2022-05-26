@@ -381,6 +381,11 @@ class PARAMTYPE(enum.Enum) :
             self.value[3]
     #end from_ct_conv
 
+    def __repr__(self) :
+        return \
+            "%s.%s" % (type(self).__name__, self.name)
+    #end __repr__
+
 #end PARAMTYPE
 PARAMTYPE.from_code = dict((t.code, t) for t in PARAMTYPE)
 # deprecated aliases:
