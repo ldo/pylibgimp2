@@ -17,6 +17,20 @@ class GIMP :
 
     # from libgimpbase/gimpbaseenums.h:
 
+    ChannelOps = ct.c_uint
+    # values for ChannelOps:
+    CHANNEL_OP_ADD = 0
+    CHANNEL_OP_SUBTRACT = 1
+    CHANNEL_OP_REPLACE = 2
+    CHANNEL_OP_INTERSECT = 3
+
+    MergeType = ct.c_uint
+    # values for MergeType:
+    EXPAND_AS_NECESSARY = 0
+    CLIP_TO_IMAGE = 1
+    CLIP_TO_BOTTOM_LAYER = 2
+    FLATTEN_IMAGE = 3
+
     PDBArgType = ct.c_uint
     # values for PDBArgType:
     PDB_INT32 = 0
@@ -42,6 +56,15 @@ class GIMP :
     PDB_PARASITE = 20
     PDB_STATUS = 21
     PDB_END = 22
+
+    ImageType = ct.c_uint
+    # values for ImageType:
+    RGB_IMAGE = 0
+    RGBA_IMAGE = 1
+    GRAY_IMAGE = 2
+    GRAYA_IMAGE = 3
+    INDEXED_IMAGE = 4
+    INDEXEDA_IMAGE = 5
 
     PDBProcType = ct.c_uint
     # values for PDBProcType:
@@ -173,6 +196,82 @@ class GIMP :
             ("run_proc", RunProc),
         ]
     #end PlugInInfo
+
+    # from libgimp/gimpenums.h:
+
+    HistogramChannel = ct.c_uint
+    # values for HistogramChannel:
+    HISTOGRAM_VALUE = 0
+    HISTOGRAM_RED = 1
+    HISTOGRAM_GREEN = 2
+    HISTOGRAM_BLUE = 3
+    HISTOGRAM_ALPHA = 4
+    HISTOGRAM_LUMINANCE = 5
+
+    LayerMode = ct.c_uint
+    # values for LayerMode:
+    LAYER_MODE_NORMAL_LEGACY = 0
+    LAYER_MODE_DISSOLVE = 1
+    LAYER_MODE_BEHIND_LEGACY = 2
+    LAYER_MODE_MULTIPLY_LEGACY = 3
+    LAYER_MODE_SCREEN_LEGACY = 4
+    LAYER_MODE_OVERLAY_LEGACY = 5
+    LAYER_MODE_DIFFERENCE_LEGACY = 6
+    LAYER_MODE_ADDITION_LEGACY = 7
+    LAYER_MODE_SUBTRACT_LEGACY = 8
+    LAYER_MODE_DARKEN_ONLY_LEGACY = 9
+    LAYER_MODE_LIGHTEN_ONLY_LEGACY = 10
+    LAYER_MODE_HSV_HUE_LEGACY = 11
+    LAYER_MODE_HSV_SATURATION_LEGACY = 12
+    LAYER_MODE_HSL_COLOR_LEGACY = 13
+    LAYER_MODE_HSV_VALUE_LEGACY = 14
+    LAYER_MODE_DIVIDE_LEGACY = 15
+    LAYER_MODE_DODGE_LEGACY = 16
+    LAYER_MODE_BURN_LEGACY = 17
+    LAYER_MODE_HARDLIGHT_LEGACY = 18
+    LAYER_MODE_SOFTLIGHT_LEGACY = 19
+    LAYER_MODE_GRAIN_EXTRACT_LEGACY = 20
+    LAYER_MODE_GRAIN_MERGE_LEGACY = 21
+    LAYER_MODE_COLOR_ERASE_LEGACY = 22
+    LAYER_MODE_OVERLAY = 23
+    LAYER_MODE_LCH_HUE = 24
+    LAYER_MODE_LCH_CHROMA = 25
+    LAYER_MODE_LCH_COLOR = 26
+    LAYER_MODE_LCH_LIGHTNESS = 27
+    LAYER_MODE_NORMAL = 28
+    LAYER_MODE_BEHIND = 29
+    LAYER_MODE_MULTIPLY = 30
+    LAYER_MODE_SCREEN = 31
+    LAYER_MODE_DIFFERENCE = 32
+    LAYER_MODE_ADDITION = 33
+    LAYER_MODE_SUBTRACT = 34
+    LAYER_MODE_DARKEN_ONLY = 35
+    LAYER_MODE_LIGHTEN_ONLY = 36
+    LAYER_MODE_HSV_HUE = 37
+    LAYER_MODE_HSV_SATURATION = 38
+    LAYER_MODE_HSL_COLOR = 39
+    LAYER_MODE_HSV_VALUE = 40
+    LAYER_MODE_DIVIDE = 41
+    LAYER_MODE_DODGE = 42
+    LAYER_MODE_BURN = 43
+    LAYER_MODE_HARDLIGHT = 44
+    LAYER_MODE_SOFTLIGHT = 45
+    LAYER_MODE_GRAIN_EXTRACT = 46
+    LAYER_MODE_GRAIN_MERGE = 47
+    LAYER_MODE_VIVID_LIGHT = 48
+    LAYER_MODE_PIN_LIGHT = 49
+    LAYER_MODE_LINEAR_LIGHT = 50
+    LAYER_MODE_HARD_MIX = 51
+    LAYER_MODE_EXCLUSION = 52
+    LAYER_MODE_LINEAR_BURN = 53
+    LAYER_MODE_LUMA_DARKEN_ONLY = 54
+    LAYER_MODE_LUMA_LIGHTEN_ONLY = 55
+    LAYER_MODE_LUMINANCE = 56
+    LAYER_MODE_COLOR_ERASE = 57
+    LAYER_MODE_ERASE = 58
+    LAYER_MODE_MERGE = 59
+    LAYER_MODE_SPLIT = 60
+    LAYER_MODE_PASS_THROUGH = 61
 
 #end GIMP
 
@@ -436,11 +535,69 @@ libgimp2.gimp_quit.argtypes = ()
 libgimp2.gimp_quit.restype = None
 libgimp2.gimp_install_procedure.argtypes = (ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, ct.c_char_p, GIMP.PDBProcType, ct.c_int, ct.c_int, ct.POINTER(GIMP.ParamDef), ct.POINTER(GIMP.ParamDef))
 libgimp2.gimp_install_procedure.restype = None
+# libgimp2.gimp_run_procedure needs varargs, which ctypes doesn’t handle,
+# luckily we can use gimp_run_procedure2 instead
+libgimp2.gimp_run_procedure2.argtypes = (ct.c_char_p, ct.POINTER(ct.c_int), ct.c_int, ct.POINTER(GIMP.Param))
+libgimp2.gimp_run_procedure2.restype = ct.POINTER(GIMP.Param)
+libgimp2.gimp_destroy_params.argtypes = (ct.POINTER(GIMP.Param), ct.c_int)
+libgimp2.gimp_destroy_params.restype = None
+libgimp2.gimp_destroy_paramdefs.argtypes = (ct.POINTER(GIMP.ParamDef), ct.c_int)
+libgimp2.gimp_destroy_paramdefs.restype = None
+
+# from libgimp/gimpproceduraldb.h:
+
+libgimp2.gimp_procedural_db_proc_info.argtypes = (ct.c_char_p, ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(GIMP.PDBProcType), ct.POINTER(ct.c_int), ct.POINTER(ct.c_int), ct.POINTER(ct.POINTER(GIMP.ParamDef)), ct.POINTER(ct.POINTER(GIMP.ParamDef)))
+libgimp2.gimp_procedural_db_proc_info.restype = ct.c_bool
+
+# from libgimp/gimpselection_pdb.h:
+
+libgimp2.gimp_selection_all.argtypes = (ct.c_int32,)
+libgimp2.gimp_selection_all.restype = ct.c_bool
+libgimp2.gimp_selection_none.argtypes = (ct.c_int32,)
+libgimp2.gimp_selection_none.restype = ct.c_bool
+
+# from libgimp/gimpselectiontools_pdb.h:
+
+libgimp2.gimp_rect_select.argtypes = (ct.c_int32, ct.c_double, ct.c_double, ct.c_double, ct.c_double, GIMP.ChannelOps, ct.c_bool, ct.c_double)
+libgimp2.gimp_rect_select.restype = ct.c_bool
+
+# from libgimp/gimplayer.h:
+
+libgimp2.gimp_layer_new.argtypes = (ct.c_int32, ct.c_char_p, ct.c_int, ct.c_int, GIMP.ImageType, ct.c_double, GIMP.LayerMode)
+libgimp2.gimp_layer_new.restype = ct.c_int32
+libgimp2.gimp_layer_copy.restypes = (ct.c_int32,)
+libgimp2.gimp_layer_copy.restype = ct.c_int32
 
 # from libgimp/gimpplugin_pdb.h:
 
 libgimp2.gimp_plugin_menu_register.argtypes = (ct.c_char_p, ct.c_char_p)
 libgimp2.gimp_plugin_menu_register.restype = ct.c_bool
+
+# from libgimp/gimpimage_pdb.h:
+
+libgimp2.gimp_image_add_layer.argtypes = (ct.c_int32, ct.c_int32, ct.c_int)
+libgimp2.gimp_image_add_layer.restype = ct.c_bool
+libgimp2.gimp_image_merge_down.argtypes = (ct.c_int32, ct.c_int32, GIMP.MergeType)
+libgimp2.gimp_image_merge_down.restype = ct.c_int32
+
+# from libgimp/gimplayer_pdb.h:
+
+libgimp2.gimp_layer_set_opacity.argtypes = (ct.c_int32, ct.c_double)
+libgimp2.gimp_layer_set_opacity.restype = ct.c_bool
+libgimp2.gimp_layer_set_mode.argtypes = (ct.c_int32, GIMP.LayerMode)
+libgimp2.gimp_layer_set_mode.restype = ct.c_bool
+
+# from libgimp/libgimp/gimpimageundo_pdb.h:
+
+libgimp2.gimp_image_undo_group_start.argtypes = (ct.c_int32,)
+libgimp2.gimp_image_undo_group_start.restype = ct.c_bool
+libgimp2.gimp_image_undo_group_end.argtypes = (ct.c_int32,)
+libgimp2.gimp_image_undo_group_end.restype = ct.c_bool
+
+# from libgimp/gimpdrawablecolor_pdb.h:
+
+libgimp2.gimp_drawable_levels.argtypes = (ct.c_int32, GIMP.HistogramChannel, ct.c_double, ct.c_double, ct.c_bool, ct.c_double, ct.c_double, ct.c_double, ct.c_bool)
+libgimp2.gimp_drawable_levels.restype = ct.c_bool
 
 #+
 # Higher-level stuff follows
