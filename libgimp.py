@@ -450,14 +450,17 @@ def wrap_run_proc(run_proc) :
     "        return return_vals\n" \
     "    #end run_proc\n"
 
+    last_return = None
+      # to save constructed objects in-between invocations (not re-entrant)
+
     def run_wrapper(c_name, nparams, c_params, nreturn_vals, c_return_vals) :
+        nonlocal last_return
         name = str_decode(c_name)
         params = ct_to_seq(c_params[:nparams], conv = param_from_ct)
         return_vals = run_proc(name, params)
-        nreturn_vals.value = len(return_vals)
-        for i, v in enumerate(return_vals) :
-            c_return_vals[i] = param_to_ct(v[0], v[1])
-        #end for
+        last_return = seq_to_ct(return_vals, GIMP.Param, conv = lambda v : param_to_ct(v[0], v[1]))
+        nreturn_vals[0] = len(return_vals)
+        c_return_vals[0] = last_return
     #end run_wrapper
 
 #begin wrap_run_proc
