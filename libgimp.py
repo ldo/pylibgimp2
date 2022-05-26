@@ -626,6 +626,7 @@ def procedural_db_proc_info(procname : str) :
                 "author" : str_decode(c_author.value),
                 "copyright" : str_decode(c_copyright.value),
                 "date" : str_decode(c_date.value),
+                "proc_type" : c_proc_type.value,
             }
         for keyword, nr_items, c_items in \
             (
