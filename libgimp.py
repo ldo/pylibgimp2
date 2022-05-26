@@ -446,6 +446,54 @@ libgimp2.gimp_plugin_menu_register.restype = ct.c_bool
 # Higher-level stuff follows
 #-
 
+def procedural_db_proc_info(procname : str) :
+    c_procname = str_encode(procname)
+    c_blurb = ct.c_char_p()
+    c_help = ct.c_char_p()
+    c_author = ct.c_char_p()
+    c_copyright = ct.c_char_p()
+    c_date = ct.c_char_p()
+    c_proc_type = GIMP.PDBProcType()
+    c_num_args = ct.c_int()
+    c_num_values = ct.c_int()
+    c_args = ct.POINTER(GIMP.ParamDef)()
+    c_return_vals = ct.POINTER(GIMP.ParamDef)()
+    success = libgimp2.gimp_procedural_db_proc_info(c_procname, ct.byref(c_blurb), ct.byref(c_help), ct.byref(c_author), ct.byref(c_copyright), ct.byref(c_date), ct.byref(c_proc_type), ct.byref(c_num_args), ct.byref(c_num_values), ct.byref(c_args), ct.byref(c_return_vals))
+    if success :
+        result = \
+            {
+                "blurb" : str_decode(c_blurb.value),
+                "help" : str_decode(c_help.value),
+                "author" : str_decode(c_author.value),
+                "copyright" : str_decode(c_copyright.value),
+                "date" : str_decode(c_date.value),
+            }
+        for keyword, nr_items, c_items in \
+            (
+                ("args", c_num_args.value, c_args),
+                ("return_vals", c_num_values.value, c_return_vals),
+            ) \
+        :
+            result[keyword] = \
+                list \
+                  (
+                    {
+                        "type" : PARAMTYPE.from_code[c_item.type],
+                        "name" : str_decode(c_item.name),
+                        "description" : str_decode(c_item.description),
+                    }
+                    for c_item in c_items[:nr_items]
+                  )
+        #end for
+        libgimp2.gimp_destroy_paramdefs(c_args, c_num_args.value)
+        libgimp2.gimp_destroy_paramdefs(c_return_vals, c_num_values.value)
+    else :
+        result = None
+    #end if
+    return \
+        result
+#end procedural_db_proc_info
+
 def wrap_run_proc(run_proc) :
     "creates a wrapper around the given Python function, which" \
     " should be written somewhat as follows:\n" \
