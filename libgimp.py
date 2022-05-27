@@ -81,6 +81,12 @@ class GIMP :
     PDB_SUCCESS = 3
     PDB_CANCEL = 4
 
+    RunMode = ct.c_uint # first argument to every plugin.
+    # values for RunMode:
+    RUN_INTERACTIVE = 0
+    RUN_NONINTERACTIVE = 1
+    RUN_WITH_LAST_VALS = 2
+
     # from libgimpbase/gimpparasite.h:
 
     class Parasite(ct.Structure) :
