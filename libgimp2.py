@@ -722,6 +722,7 @@ libgimpui2.gimp_dialog_run.restype = ct.c_int
 
 libgimpui2.gimp_standard_help_func.argtypes = (ct.c_char_p, ct.c_void_p)
 libgimpui2.gimp_standard_help_func.restype = None
+STANDARD_HELP_FUNC = GIMP.HelpFunc(libgimpui2.gimp_standard_help_func)
 
 # from libgimpwidgets/gimp3migration.h:
 
@@ -915,12 +916,126 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
     libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_menu_label, c_image_types, type, nr_params, nr_return_vals, c_params, c_return_vals)
 #end install_procedure
 
+#+
+# User Interface
+#-
+
 def plugin_menu_register(procname, menu_item_name) :
     c_procname = str_encode(procname)
     c_menu_item_name = str_encode(menu_item_name)
     return \
         libgimp2.gimp_plugin_menu_register(c_procname, c_menu_item_name)
 #end plugin_menu_register
+
+def ui_init(plugin_name : str, preview : bool) :
+    "need to call this before using any UI functions."
+    libgimpui2.gimp_ui_init(str_encode(plugin_name), preview)
+#end ui_init
+
+class Dialog :
+    "high-level wrapper for a Gimp dialog. Do not instantiate directly; use the" \
+    " create method."
+
+    __slots__ = ("_dialog", "_wrap_help_func",)
+
+    def __init__(self, _dialog) :
+        self._dialog = _dialog
+    #end __init__
+
+    @classmethod
+    def create(celf, title : str, role : str, parent, flags : int, help_func, help_id, buttons = None) :
+        if parent != None :
+            if not isinstance(parent, celf) :
+                raise TypeError("parent is not a %s" % celf.__name__)
+            #end if
+            c_parent = parent._dialog
+        else :
+            c_parent = None
+        #end if
+        if (
+                buttons != None
+            and
+                (
+                    not isinstance(buttons, (list, tuple))
+                or
+                    not all
+                      (
+                            isinstance(b, (list, tuple))
+                        and
+                            len(b) == 2
+                        and
+                            isinstance(b[0], str)
+                        and
+                            isinstance(b[1], int)
+                        for b in buttons
+                      )
+                )
+        ) :
+            raise TypeError("buttons is not a list of (name, id) tuples")
+        #end if
+        c_title = str_encode(title)
+        c_role = str_encode(role)
+        c_help_id = str_encode(help_id)
+        wrap_help_func = help_func
+        if help_func == None :
+            help_func = STANDARD_HELP_FUNC
+        #end if
+        dialog = libgimpui2.gimp_dialog_new(c_title, c_role, c_parent, flags, help_func, c_help_id, None)
+        self = celf(dialog)
+        self._wrap_help_func = wrap_help_func
+        if buttons != None :
+            for button in buttons :
+                self.add_button(*button)
+            #end for
+        #end if
+        return \
+            self
+    #end create
+
+    def add_button(self, button_text : str, response_id : int) :
+        libgimpui2.gimp_dialog_add_button(self._dialog, str_encode(button_text), response_id)
+    #end add_button
+
+    def set_alternative_button_order(self, response_ids) :
+        c_ids = seq_to_ct(response_ids, ct.c_int)
+        libgimpgtk2.libgtk2.gtk_dialog_set_alternative_button_order_from_array \
+            (self._dialog, len(response_ids), c_ids)
+    #end set_alternative_button_order
+
+    def set_transient(self) :
+        libgimpui2.gimp_window_set_transient(self._dialog)
+    #end set_transient
+
+    def show(self) :
+        libgimpgtk2.libgtk2.gtk_widget_show(self._dialog)
+    #end show
+
+    def close(self) :
+        if self._dialog != None :
+            libgimpgtk2.libgtk2.gtk_widget_destroy(self._dialog)
+            self._dialog = None
+        #end if
+    #end close
+
+    def run(self) :
+        return \
+            libgimpui2.gimp_dialog_run(self._dialog)
+    #end run
+
+    def run_and_close(self) :
+        "convenience routine which runs the dialog and closes it" \
+        " before returning the user’s response."
+        response = self.run()
+        self.close()
+        return \
+            response
+    #end run_and_close
+
+#end Dialog
+
+#+
+# Mainline
+#-
 
 def main(plugin_info : GIMP.PlugInInfo) :
     "to be invoked as your plugin mainline."
