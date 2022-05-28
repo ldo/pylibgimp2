@@ -22,7 +22,7 @@ GType = gsize
 
 # from glib-2.0/gobject/gclosure.h:
 
-GCallback = ct.c_void_p # ct.CFUNCTYPE(None) # actually might take args and return result, depending on context
+GCallback = ct.CFUNCTYPE(None) # actually might take args and return result, depending on context
 GClosureNotify = ct.CFUNCTYPE(None, ct.c_void_p, ct.c_void_p)
 
 class GClosure(ct.Structure) :
@@ -33,7 +33,7 @@ class GClosure(ct.Structure) :
 
 GConnectFlags = ct.c_uint
 # values for GConnectFlags:
-G_CONNECT_AFTER	= 1 << 0
+G_CONNECT_AFTER = 1 << 0
 G_CONNECT_SWAPPED = 1 << 1
 
 class GTK :
@@ -50,6 +50,12 @@ class GTK :
     class Widget(ct.Structure) :
         _fields_ = CANT_BE_BOTHERED_FOR_NOW()
     #end Widget
+
+    # from gtk-2.0/gtk/gtkadjustment.h:
+
+    class Adjustment(ct.Structure) :
+        _fields_ = CANT_BE_BOTHERED_FOR_NOW()
+    #end Adjustment
 
     # from gtk-2.0/gtk/gtkwindow.h:
 
@@ -96,7 +102,7 @@ libgtk2 = ct.cdll.LoadLibrary("libgtk-x11-2.0.so.0")
 
 # from glib-2.0/gobject/gsignal.h:
 
-libgobject2.g_signal_connect_data.argtypes = (ct.c_void_p, ct.c_char_p, GCallback, ct.c_void_p, GClosureNotify, GConnectFlags)
+libgobject2.g_signal_connect_data.argtypes = (ct.c_void_p, ct.c_char_p, ct.c_void_p, ct.c_void_p, ct.c_void_p, GConnectFlags)
 libgobject2.g_signal_connect_data.restype = ct.c_ulong
 
 # from gtk-2.0/gtk/gtkwidget.h:
@@ -111,12 +117,27 @@ libgtk2.gtk_widget_destroy.restype = None
 libgtk2.gtk_container_set_border_width.argtypes = (ct.c_void_p, ct.c_uint)
 libgtk2.gtk_container_set_border_width.restype = None
 
+# from gtk-2.0/gtk/gtkadjustment.h:
+
+libgtk2.gtk_adjustment_new.argtypes = (ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double)
+libgtk2.gtk_adjustment_new.restype = ct.c_void_p
+libgtk2.gtk_adjustment_get_value.argtypes = (ct.c_void_p,)
+libgtk2.gtk_adjustment_get_value.restype = ct.c_double
+libgtk2.gtk_adjustment_set_value.argtypes = (ct.c_void_p, ct.c_double)
+libgtk2.gtk_adjustment_set_value.restype = None
+libgtk2.gtk_adjustment_configure.argtypes = (ct.c_void_p, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double)
+libgtk2.gtk_adjustment_configure.restype = None
+
 # from gtk-2.0/gtk/gtktable.h:
 
 libgtk2.gtk_table_new.argtypes = (ct.c_uint, ct.c_uint, ct.c_bool)
 libgtk2.gtk_table_new.restype = ct.c_void_p
+libgtk2.gtk_table_set_row_spacing.argtypes = (ct.c_void_p, ct.c_uint, ct.c_uint)
+libgtk2.gtk_table_set_row_spacing.restype = None
 libgtk2.gtk_table_set_row_spacings.argtypes = (ct.c_void_p, ct.c_uint)
 libgtk2.gtk_table_set_row_spacings.restype = None
+libgtk2.gtk_table_set_col_spacing.argtypes = (ct.c_void_p, ct.c_uint, ct.c_uint)
+libgtk2.gtk_table_set_col_spacing.restype = None
 libgtk2.gtk_table_set_col_spacings.argtypes = (ct.c_void_p, ct.c_uint)
 libgtk2.gtk_table_set_col_spacings.restype = None
 

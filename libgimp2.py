@@ -299,6 +299,7 @@ class GIMP :
 
 ident = lambda x : x
 str_encode = lambda s : s.encode()
+str_encode_optional = lambda s : (lambda : None, lambda : s.encode())[s != None]()
 str_decode = lambda s : s.decode()
 
 def def_c_char_p_encode(save_strs) :
@@ -689,6 +690,7 @@ libgimpui2.gimp_float_adjustment_update.argtypes = (ct.c_void_p, ct.c_void_p)
 libgimpui2.gimp_float_adjustment_update.restype = None
 libgimpui2.gimp_double_adjustment_update.argtypes = (ct.c_void_p, ct.c_void_p)
 libgimpui2.gimp_double_adjustment_update.restype = None
+# note that gimp_spin_button_new is deprecated
 
 # from libgimpwidgets/gimpframe.h:
 
@@ -707,6 +709,13 @@ libgimpui2.gimp_scale_entry_set_logarithmic.argtypes = (ct.c_void_p, ct.c_bool)
 libgimpui2.gimp_scale_entry_set_logarithmic.restype = None
 libgimpui2.gimp_scale_entry_get_logarithmic.argtypes = (ct.c_void_p,)
 libgimpui2.gimp_scale_entry_get_logarithmic.restype = ct.c_bool
+
+# from libgimpwidgets/gimpspinbutton.h:
+
+libgimpui2.gimp_spin_button_new_.argtypes = (ct.c_void_p, ct.c_double, ct.c_uint)
+libgimpui2.gimp_spin_button_new_.restype = ct.c_void_p
+libgimpui2.gimp_spin_button_new_with_range.argtypes = (ct.c_double, ct.c_double, ct.c_double)
+libgimpui2.gimp_spin_button_new_with_range.restype = ct.c_void_p
 
 # from libgimpwidgets/gimpdialog.h:
 
@@ -728,6 +737,8 @@ STANDARD_HELP_FUNC = GIMP.HelpFunc(libgimpui2.gimp_standard_help_func)
 
 libgimpui2.gtk_box_new.argtypes = (GTK.Orientation, ct.c_int)
 libgimpui2.gtk_box_new.restype = ct.c_void_p
+libgimpui2.gtk_scale_new.argtypes = (GTK.Orientation, ct.c_void_p)
+libgimpui2.gtk_scale_new.restype = ct.c_void_p
 
 #+
 # Higher-level stuff follows
@@ -932,15 +943,138 @@ def ui_init(plugin_name : str, preview : bool) :
     libgimpui2.gimp_ui_init(str_encode(plugin_name), preview)
 #end ui_init
 
-class Dialog :
+class Widget :
+
+    __slots__ = ("_gtkobj", "_wrappers")
+
+    def __init__(self, _gtkobj) :
+        self._gtkobj = _gtkobj
+        self._wrappers = [] # for saving CFUNCTYPE wrappers to ensure they don’t randomly disappear
+    #end __init__
+
+    def destroy(self) :
+        if self._gtkobj != None :
+            libgimpgtk2.libgtk2.gtk_widget_destroy(self._gtkobj)
+            self._gtkobj = None
+        #end if
+    #end destroy
+
+    def show(self) :
+        libgimpgtk2.libgtk2.gtk_widget_show(self._gtkobj)
+        return \
+            self
+    #end show
+
+    def signal_connect(self, name, handler, arg = None) :
+        if isinstance(handler, ct._CFuncPtr) :
+            c_handler = handler
+        else :
+            c_handler = libgimpgtk2.GCallback(handler)
+        #end if
+        self._wrappers.append(c_handler)
+        libgimpgtk2.libgobject2.g_signal_connect_data \
+            (self._gtkobj, str_encode(name), c_handler, arg, None, 0)
+        return \
+            self
+    #end signal_connect
+
+#end Widget
+
+class ScaleEntry(Widget) :
+
+    __slots__ = ()
+
+#end ScaleEntry
+
+class Container(Widget) :
+
+    __slots__ = ()
+
+    def set_border_width(self, border_width) :
+        libgimpgtk2.libgtk2.gtk_container_set_border_width(self._gtkobj, border_width)
+    #end set_border_width
+
+#end Container
+
+class Table(Container) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, nr_rows, nr_cols, homogeneous) :
+        gtkobj = libgimpgtk2.libgtk2.gtk_table_new(nr_rows, nr_cols, homogeneous)
+        return \
+            celf(gtkobj)
+    #end create
+
+    def set_col_spacings(self, spacings) :
+        libgimpgtk2.libgtk2.gtk_table_set_col_spacings(self._gtkobj, spacings)
+        return \
+            self
+    #end set_col_spacings
+
+    def set_row_spacings(self, spacings) :
+        libgimpgtk2.libgtk2.gtk_table_set_row_spacings(self._gtkobj, spacings)
+        return \
+            self
+    #end set_row_spacings
+
+    def scale_entry_new(self, column : int, row : int, text : str, scale_width : int, spinbutton_width : int, value : float, lower : float, upper : float, step_increment : float, page_increment : float, digits : int, constrain : bool, unconstrained_lower : float, unconstrained_upper : float, tooltip : str, help_id : str) :
+        c_text = str_encode(text)
+        c_tooltip = str_encode_optional(tooltip)
+        c_help_id = str_encode_optional(help_id)
+        result = libgimpui2.gimp_scale_entry_new(self._gtkobj, column, row, c_text, scale_width, spinbutton_width, value, lower, upper, step_increment, page_increment, digits, constrain, unconstrained_lower, unconstrained_upper, c_tooltip, c_help_id)
+        return \
+            ScaleEntry(result)
+    #end scale_entry_new
+
+#end Table
+
+class Box(Container) :
+    "high-level wrapper for a GTK layout box. Do not instantiate directly; use" \
+    " the create method or Dialog.get_content_area."
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, orientation, spacing) :
+        return \
+            celf(libgimpui2.gtk_box_new(orientation, spacing))
+    #end create
+
+    def pack_start(self, child, expand, fill, padding) :
+        if not isinstance(child, Widget) :
+            raise TypeError("child must be a Widget")
+        #end if
+        libgimpgtk2.libgtk2.gtk_box_pack_start(self._gtkobj, child._gtkobj, expand, fill, padding)
+    #end pack_start
+
+#end Box
+
+class Frame(Widget) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, label) :
+        return \
+            celf(libgimpui2.gimp_frame_new(str_encode(label)))
+    #end create
+
+    def container_add(self, child) :
+        if not isinstance(child, Widget) :
+            raise TypeError("child must be a Widget")
+        #end if
+        libgimpgtk2.libgtk2.gtk_container_add(self._gtkobj, child._gtkobj)
+    #end container_add
+
+#end Frame
+
+class Dialog(Widget) :
     "high-level wrapper for a Gimp dialog. Do not instantiate directly; use the" \
     " create method."
 
-    __slots__ = ("_dialog", "_wrap_help_func",)
-
-    def __init__(self, _dialog) :
-        self._dialog = _dialog
-    #end __init__
+    __slots__ = ()
 
     @classmethod
     def create(celf, title : str, role : str, parent, flags : int, help_func, help_id, buttons = None) :
@@ -948,7 +1082,7 @@ class Dialog :
             if not isinstance(parent, celf) :
                 raise TypeError("parent is not a %s" % celf.__name__)
             #end if
-            c_parent = parent._dialog
+            c_parent = parent._gtkobj
         else :
             c_parent = None
         #end if
@@ -982,7 +1116,9 @@ class Dialog :
         #end if
         dialog = libgimpui2.gimp_dialog_new(c_title, c_role, c_parent, flags, help_func, c_help_id, None)
         self = celf(dialog)
-        self._wrap_help_func = wrap_help_func
+        if wrap_help_func != None :
+            self._wrappers.append(wrap_help_func)
+        #end if
         if buttons != None :
             for button in buttons :
                 self.add_button(*button)
@@ -992,41 +1128,41 @@ class Dialog :
             self
     #end create
 
+    def get_content_area(self) :
+        return \
+            Box(libgimpgtk2.libgtk2.gtk_dialog_get_content_area(self._gtkobj))
+    #end get_content_area
+
     def add_button(self, button_text : str, response_id : int) :
-        libgimpui2.gimp_dialog_add_button(self._dialog, str_encode(button_text), response_id)
+        libgimpui2.gimp_dialog_add_button(self._gtkobj, str_encode(button_text), response_id)
+        return \
+            self
     #end add_button
 
     def set_alternative_button_order(self, response_ids) :
         c_ids = seq_to_ct(response_ids, ct.c_int)
         libgimpgtk2.libgtk2.gtk_dialog_set_alternative_button_order_from_array \
-            (self._dialog, len(response_ids), c_ids)
+            (self._gtkobj, len(response_ids), c_ids)
+        return \
+            self
     #end set_alternative_button_order
 
     def set_transient(self) :
-        libgimpui2.gimp_window_set_transient(self._dialog)
+        libgimpui2.gimp_window_set_transient(self._gtkobj)
+        return \
+            self
     #end set_transient
-
-    def show(self) :
-        libgimpgtk2.libgtk2.gtk_widget_show(self._dialog)
-    #end show
-
-    def close(self) :
-        if self._dialog != None :
-            libgimpgtk2.libgtk2.gtk_widget_destroy(self._dialog)
-            self._dialog = None
-        #end if
-    #end close
 
     def run(self) :
         return \
-            libgimpui2.gimp_dialog_run(self._dialog)
+            libgimpui2.gimp_dialog_run(self._gtkobj)
     #end run
 
     def run_and_close(self) :
         "convenience routine which runs the dialog and closes it" \
         " before returning the user’s response."
         response = self.run()
-        self.close()
+        self.destroy()
         return \
             response
     #end run_and_close
