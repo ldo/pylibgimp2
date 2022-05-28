@@ -11,6 +11,9 @@ Python support built into Gimp itself.
 import sys
 import enum
 import ctypes as ct
+import libgimpgtk2
+from libgimpgtk2 import \
+    GTK
 
 class GIMP :
     "useful definitions adapted from files in /usr/include/gimp-2.0/."
@@ -278,6 +281,19 @@ class GIMP :
     LAYER_MODE_MERGE = 59
     LAYER_MODE_SPLIT = 60
     LAYER_MODE_PASS_THROUGH = 61
+
+    # from libgimpwidgets/gimpwidgetstypes.h:
+
+    HelpFunc = ct.CFUNCTYPE(None, ct.c_char_p, ct.c_void_p)
+
+    # from libgimpwidgets/gimpdialog.h:
+
+    class Dialog(ct.Structure) :
+        _fields_ = \
+            [
+                ("parent_instance", GTK.Dialog),
+            ]
+    #end Dialog
 
 #end GIMP
 
@@ -550,6 +566,7 @@ def param_from_ct(param) :
 #-
 
 libgimp2 = ct.cdll.LoadLibrary("libgimp-2.0.so.0")
+libgimpui2 = ct.cdll.LoadLibrary("libgimpui-2.0.so.0")
 
 # from libgimp/gimp.h:
 
@@ -568,6 +585,18 @@ libgimp2.gimp_destroy_params.restype = None
 libgimp2.gimp_destroy_paramdefs.argtypes = (ct.POINTER(GIMP.ParamDef), ct.c_int)
 libgimp2.gimp_destroy_paramdefs.restype = None
 
+# from libgimp/gimpdrawable.h:
+
+libgimp2.gimp_drawable_flush.argtypes = (ct.c_void_p,)
+libgimp2.gimp_drawable_flush.restype = None
+
+# from libgimp/gimpdrawable_pdb.h:
+
+libgimp2.gimp_drawable_merge_shadow.argtypes = (ct.c_int32, ct.c_bool)
+libgimp2.gimp_drawable_merge_shadow.restype = ct.c_bool
+libgimp2.gimp_drawable_update.argtypes = (ct.c_int32, ct.c_int, ct.c_int, ct.c_int, ct.c_int)
+libgimp2.gimp_drawable_update.restype = ct.c_bool
+
 # from libgimp/gimpdisplay_pdb.h:
 
 libgimp2.gimp_displays_flush.argtypes = ()
@@ -577,6 +606,10 @@ libgimp2.gimp_displays_flush.restype = None
 
 libgimp2.gimp_procedural_db_proc_info.argtypes = (ct.c_char_p, ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(ct.c_char_p), ct.POINTER(GIMP.PDBProcType), ct.POINTER(ct.c_int), ct.POINTER(ct.c_int), ct.POINTER(ct.POINTER(GIMP.ParamDef)), ct.POINTER(ct.POINTER(GIMP.ParamDef)))
 libgimp2.gimp_procedural_db_proc_info.restype = ct.c_bool
+libgimp2.gimp_procedural_db_get_data.argtypes = (ct.c_char_p, ct.c_void_p)
+libgimp2.gimp_procedural_db_get_data.restype = ct.c_bool
+libgimp2.gimp_procedural_db_set_data.argtypes = (ct.c_char_p, ct.c_void_p, ct.c_uint32)
+libgimp2.gimp_procedural_db_set_data.restype = ct.c_bool
 
 # from libgimp/gimpselection_pdb.h:
 
@@ -629,6 +662,71 @@ libgimp2.gimp_image_undo_group_end.restype = ct.c_bool
 
 libgimp2.gimp_drawable_levels.argtypes = (ct.c_int32, GIMP.HistogramChannel, ct.c_double, ct.c_double, ct.c_bool, ct.c_double, ct.c_double, ct.c_double, ct.c_bool)
 libgimp2.gimp_drawable_levels.restype = ct.c_bool
+
+# from libgimp/gimpprogress.h:
+
+libgimp2.gimp_progress_update.argtypes = (ct.c_double,)
+libgimp2.gimp_progress_update.restype = ct.c_bool
+
+# from libgimp/gimpui.h:
+
+libgimpui2.gimp_ui_init.argtypes = (ct.c_char_p, ct.c_bool)
+libgimpui2.gimp_ui_init.restype = None
+libgimpui2.gimp_ui_get_display_window.argtypes = (ct.c_uint32,)
+libgimpui2.gimp_ui_get_display_window.restype = ct.c_void_p
+libgimpui2.gimp_ui_get_progress_window.argtypes = ()
+libgimpui2.gimp_ui_get_progress_window.restype = ct.c_void_p
+libgimpui2.gimp_window_set_transient_for_display.argtypes = (ct.c_void_p, ct.c_uint32)
+libgimpui2.gimp_window_set_transient_for_display.restype = None
+libgimpui2.gimp_window_set_transient.restype = None
+libgimpui2.gimp_window_set_transient.argtypes = (ct.c_void_p,)
+
+# from libgimpwidgets/gimpwidgets.h:
+
+libgimpui2.gimp_int_adjustment_update.argtypes = (ct.c_void_p, ct.c_void_p)
+libgimpui2.gimp_int_adjustment_update.restype = None
+libgimpui2.gimp_float_adjustment_update.argtypes = (ct.c_void_p, ct.c_void_p)
+libgimpui2.gimp_float_adjustment_update.restype = None
+libgimpui2.gimp_double_adjustment_update.argtypes = (ct.c_void_p, ct.c_void_p)
+libgimpui2.gimp_double_adjustment_update.restype = None
+
+# from libgimpwidgets/gimpframe.h:
+
+libgimpui2.gimp_frame_new.argtypes = (ct.c_char_p,)
+libgimpui2.gimp_frame_new.restype = ct.c_void_p
+
+# from libgimpwidgets/gimpscaleentry.h:
+
+libgimpui2.gimp_scale_entry_new.argtypes = (ct.c_void_p, ct.c_int, ct.c_int, ct.c_char_p, ct.c_int, ct.c_int, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_uint, ct.c_bool, ct.c_double, ct.c_double, ct.c_char_p, ct.c_char_p)
+libgimpui2.gimp_scale_entry_new.restype = ct.c_void_p
+libgimpui2.gimp_color_scale_entry_new.argtypes = (ct.c_void_p, ct.c_int, ct.c_int, ct.c_char_p, ct.c_int, ct.c_int, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_uint, ct.c_char_p, ct.c_char_p)
+libgimpui2.gimp_color_scale_entry_new.restype = ct.c_void_p
+libgimpui2.gimp_scale_entry_set_sensitive.argtypes = (ct.c_void_p, ct.c_bool)
+libgimpui2.gimp_scale_entry_set_sensitive.restype = None
+libgimpui2.gimp_scale_entry_set_logarithmic.argtypes = (ct.c_void_p, ct.c_bool)
+libgimpui2.gimp_scale_entry_set_logarithmic.restype = None
+libgimpui2.gimp_scale_entry_get_logarithmic.argtypes = (ct.c_void_p,)
+libgimpui2.gimp_scale_entry_get_logarithmic.restype = ct.c_bool
+
+# from libgimpwidgets/gimpdialog.h:
+
+libgimpui2.gimp_dialog_new.argtypes = (ct.c_char_p, ct.c_char_p, ct.c_void_p, GTK.DialogFlags, GIMP.HelpFunc, ct.c_char_p, ct.c_void_p)
+  # Unfortunately I can’t do the varargs bit, so last arg must always be None
+libgimpui2.gimp_dialog_new.restype = ct.c_void_p
+libgimpui2.gimp_dialog_add_button.argtypes = (ct.c_void_p, ct.c_char_p, ct.c_int)
+libgimpui2.gimp_dialog_add_button.restype = ct.c_void_p
+libgimpui2.gimp_dialog_run.argtypes = (ct.c_void_p,)
+libgimpui2.gimp_dialog_run.restype = ct.c_int
+
+# from libgimpwidgets/gimphelpui.h:
+
+libgimpui2.gimp_standard_help_func.argtypes = (ct.c_char_p, ct.c_void_p)
+libgimpui2.gimp_standard_help_func.restype = None
+
+# from libgimpwidgets/gimp3migration.h:
+
+libgimpui2.gtk_box_new.argtypes = (GTK.Orientation, ct.c_int)
+libgimpui2.gtk_box_new.restype = ct.c_void_p
 
 #+
 # Higher-level stuff follows
@@ -691,7 +789,11 @@ class PDB :
     "\n" \
     "    return_vals = pdb.procname(args)\n" \
     "\n" \
-    " where args and return_vals are sequences of argument/return values."
+    " where args and return_vals are sequences of argument/return values." \
+    " Conversions between Python objects and GIMP.Param representation will" \
+    " happen automatically, according to the argument and return ParamDefs" \
+    " registered for the procedure, so you never pass or get back any" \
+    " PDBArgType codes."
 
     __slots__ = ("_procs",)
 
