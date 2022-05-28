@@ -9,6 +9,7 @@ Python support built into Gimp itself.
 #-
 
 import sys
+import os
 import enum
 import ctypes as ct
 import libgimpgtk2
@@ -938,9 +939,10 @@ def plugin_menu_register(procname, menu_item_name) :
         libgimp2.gimp_plugin_menu_register(c_procname, c_menu_item_name)
 #end plugin_menu_register
 
-def ui_init(plugin_name : str, preview : bool) :
+def ui_init(preview : bool) :
     "need to call this before using any UI functions."
-    libgimpui2.gimp_ui_init(str_encode(plugin_name), preview)
+    prog_name = os.path.basename(sys.argv[0])
+    libgimpui2.gimp_ui_init(str_encode(prog_name), preview)
 #end ui_init
 
 class Widget :
