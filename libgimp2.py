@@ -475,33 +475,33 @@ def def_expect_type(expect_type) :
 
 class PARAMTYPE(enum.Enum) :
 
-    # (argtype, fieldname, to_ct_conv, from_ct_conv)
+    # (argtype, ct_type, ParamData fieldname, to_ct_conv, from_ct_conv)
     # FIXME: to_ct_conv routines for string pointers will need to stash ctype objects somewhere
-    INT32 = (GIMP.PDB_INT32, "d_int32", def_to_ct_int(32, True), ident)
-    INT16 = (GIMP.PDB_INT16, "d_int16", def_to_ct_int(16, True), ident)
-    INT8 = (GIMP.PDB_INT8, "d_int8", def_to_ct_int(8, False), ident)
-    FLOAT = (GIMP.PDB_FLOAT, "d_float", ct.c_double, ident)
-    STRING = (GIMP.PDB_STRING, "d_string", str_encode, str_decode)
-    INT32ARRAY = (GIMP.PDB_INT32ARRAY, "d_int32array", def_seq_to_ct(ct.c_int32), ct_to_seq)
-    INT16ARRAY = (GIMP.PDB_INT16ARRAY, "d_int16array", def_seq_to_ct(ct.c_int16), ct_to_seq)
-    INT8ARRAY = (GIMP.PDB_INT8ARRAY, "d_int8array", def_seq_to_ct(ct.c_uint8), ct_to_seq)
-    FLOATARRAY = (GIMP.PDB_FLOATARRAY, "d_floatarray", def_seq_to_ct(ct.c_double), ct_to_seq)
-    STRINGARRAY = (GIMP.PDB_STRINGARRAY, "d_stringarray", def_seq_to_ct(ct.c_char_p, str_encode), def_ct_to_seq(str_decode))
-    COLOURARRAY = (GIMP.PDB_COLOURARRAY, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident)
-    COLOUR = (GIMP.PDB_COLOUR, "d_colour", def_expect_type(GIMP.RGB), ident)
-    DISPLAY = (GIMP.PDB_DISPLAY, "d_display", def_to_ct_int(32, True), ident)
-    IMAGE = (GIMP.PDB_IMAGE, "d_image", def_to_ct_int(32, True), ident)
-    ITEM = (GIMP.PDB_ITEM, "d_item", def_to_ct_int(32, True), ident)
-    LAYER = (GIMP.PDB_LAYER, "d_layer", def_to_ct_int(32, True), ident)
+    INT32 = (GIMP.PDB_INT32, ct.c_int32, "d_int32", def_to_ct_int(32, True), ident)
+    INT16 = (GIMP.PDB_INT16, ct.c_int16, "d_int16", def_to_ct_int(16, True), ident)
+    INT8 = (GIMP.PDB_INT8, ct.c_int8, "d_int8", def_to_ct_int(8, False), ident)
+    FLOAT = (GIMP.PDB_FLOAT, ct.c_double, "d_float", ct.c_double, ident)
+    STRING = (GIMP.PDB_STRING, ct.c_char_p, "d_string", str_encode, str_decode)
+    INT32ARRAY = (GIMP.PDB_INT32ARRAY, ct.c_void_p, "d_int32array", def_seq_to_ct(ct.c_int32), ct_to_seq)
+    INT16ARRAY = (GIMP.PDB_INT16ARRAY, ct.c_void_p, "d_int16array", def_seq_to_ct(ct.c_int16), ct_to_seq)
+    INT8ARRAY = (GIMP.PDB_INT8ARRAY, ct.c_void_p, "d_int8array", def_seq_to_ct(ct.c_uint8), ct_to_seq)
+    FLOATARRAY = (GIMP.PDB_FLOATARRAY, ct.c_void_p, "d_floatarray", def_seq_to_ct(ct.c_double), ct_to_seq)
+    STRINGARRAY = (GIMP.PDB_STRINGARRAY, ct.c_void_p, "d_stringarray", def_seq_to_ct(ct.c_char_p, str_encode), def_ct_to_seq(str_decode))
+    COLOURARRAY = (GIMP.PDB_COLOURARRAY, ct.c_void_p, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident)
+    COLOUR = (GIMP.PDB_COLOUR, GIMP.RGB, "d_colour", def_expect_type(GIMP.RGB), ident)
+    DISPLAY = (GIMP.PDB_DISPLAY, ct.c_int32, "d_display", def_to_ct_int(32, True), ident)
+    IMAGE = (GIMP.PDB_IMAGE, ct.c_int32, "d_image", def_to_ct_int(32, True), ident)
+    ITEM = (GIMP.PDB_ITEM, ct.c_int32, "d_item", def_to_ct_int(32, True), ident)
+    LAYER = (GIMP.PDB_LAYER, ct.c_int32, "d_layer", def_to_ct_int(32, True), ident)
     # no enum for layer_mask?
-    CHANNEL = (GIMP.PDB_CHANNEL, "d_channel", def_to_ct_int(32, True), ident)
-    DRAWABLE = (GIMP.PDB_DRAWABLE, "d_drawable", def_to_ct_int(32, True), ident)
-    SELECTION = (GIMP.PDB_SELECTION, "d_selection", def_to_ct_int(32, True), ident)
-    VECTORS = (GIMP.PDB_VECTORS, "d_vectors", def_to_ct_int(32, True), ident)
+    CHANNEL = (GIMP.PDB_CHANNEL, ct.c_int32, "d_channel", def_to_ct_int(32, True), ident)
+    DRAWABLE = (GIMP.PDB_DRAWABLE, ct.c_int32, "d_drawable", def_to_ct_int(32, True), ident)
+    SELECTION = (GIMP.PDB_SELECTION, ct.c_int32, "d_selection", def_to_ct_int(32, True), ident)
+    VECTORS = (GIMP.PDB_VECTORS, ct.c_int32, "d_vectors", def_to_ct_int(32, True), ident)
     # no enum for d_unit?
-    PARASITE = (GIMP.PDB_PARASITE, "d_parasite", def_expect_type(GIMP.Parasite), ident)
+    PARASITE = (GIMP.PDB_PARASITE, GIMP.Parasite, "d_parasite", def_expect_type(GIMP.Parasite), ident)
     # no enum for d_tattoo?
-    STATUS = (GIMP.PDB_STATUS, "d_status", def_to_ct_enum(GIMP.PDB_CANCEL), ident)
+    STATUS = (GIMP.PDB_STATUS, ct.c_uint, "d_status", def_to_ct_enum(GIMP.PDB_CANCEL), ident)
 
     @property
     def code(self) :
@@ -510,21 +510,27 @@ class PARAMTYPE(enum.Enum) :
     #end code
 
     @property
-    def fieldname(self) :
+    def ct_type(self) :
         return \
             self.value[1]
+    #end ct_type
+
+    @property
+    def fieldname(self) :
+        return \
+            self.value[2]
     #end fieldname
 
     @property
     def to_ct_conv(self) :
         return \
-            self.value[2]
+            self.value[3]
     #end to_ct_conv
 
     @property
     def from_ct_conv(self) :
         return \
-            self.value[3]
+            self.value[4]
     #end from_ct_conv
 
     def __repr__(self) :
@@ -893,6 +899,116 @@ del PDB
 def displays_flush() :
     libgimp2.gimp_displays_flush()
 #end displays_flush
+
+class Params :
+    "convenience wrapper for holding param definitions and values in Python" \
+    " format with easy conversion to/from the format Gimp expects."
+
+    __slots__ = ("name", "defs", "ct_struct", "_struct_fields", "default_vals", "cur_vals")
+
+    def __init__(self, name, defs) :
+
+        class ct_struct(Structure) :
+            pass # filled in below
+        #end ct_struct
+
+    #begin __init__
+        self.name = name
+        if (
+                not isinstance(defs, (list, tuple))
+            or
+                not all(isinstance(e, dict) for e in defs)
+            or
+                not all(k in e for k in ("type", "name", "description", "default") for e in defs)
+            or
+                not all(isinstance(e["type"], PARAMTYPE) for e in defs)
+        ) :
+            raise TypeError \
+              (
+                "defs must be sequence of dicts, each with"
+                " type, name, description and default keys"
+              )
+        #end if
+        self.defs = list(defs)
+        ct_struct.__name__ = "%s_params" % name
+        ct_struct._fields_ = list((e["name"], e["type"].ct_type) for e in defs)
+        self._struct_fields = dict \
+          (
+            (f[0], {"offset" : getattr(ct_struct, f[0]).offset})
+            for f in ct_struct._fields_
+          )
+        for e in defs :
+            self._struct_fields[e["name"]]["type"] = e["type"]
+        #end for
+        self.ct_struct = ct_struct
+        default_vals = ct_struct()
+        for e in defs :
+            setattr(default_vals, e["name"], e["type"].to_ct_conv(e["default"]))
+        #end for
+        self.default_vals = default_vals
+        self.cur_vals = ct_struct.from_buffer_copy(default_vals)
+    #end __init__
+
+    def field_addr(self, fieldname) :
+        "returns the address of the specified field within cur_vals, for use" \
+        " with Gimp adjustment callbacks that write directly into struct fields."
+        return \
+            (
+                ct.addressof(self.cur_vals)
+            +
+                self._struct_fields[fieldname]["offset"]
+            )
+    #end field_addr
+
+    def save_data(self) :
+        "tells Gimp to save the cur_vals as the plug-in’s last-used settings."
+        libgimp2.gimp_procedural_db_set_data \
+            (str_encode(self.name), ct.byref(self.cur_vals), ct.sizeof(self.cur_vals))
+    #end save_data
+
+    def load_data(self) :
+        "retrieves the plug-in’s last-used settings, if there are any."
+        return \
+            libgimp2.gimp_procedural_db_get_data(str_encode(self.name), ct.byref(self.cur_vals))
+    #end load_data
+
+    def reset_default(self) :
+        "resets cur_vals to the defaults."
+        ct.memmove(ct.byref(self.cur_vals), ct.byref(self.default_vals), ct.sizeof(self.ct_struct))
+    #end reset_default
+
+    def get_current(self) :
+        "returns the current parameter values as a dict of Python objects."
+        return \
+            dict \
+              (
+                (e["name"], e["type"].from_ct_conv(getattr(self.cur_vals, e["name"])))
+                for e in self.defs
+              )
+    #end get_current
+
+    def __getitem__(self, field) :
+        "for accessing individual fields as a dict of Python objects."
+        return \
+            self._struct_fields[field]["type"].from_ct_conv(getattr(self.cur_vals, field))
+    #end __getitem__
+
+    def __setitem__(self, field, val) :
+        "for accessing individual fields as a dict of Python objects."
+        setattr(self.cur_vals, field, self._struct_fields[field]["type"].to_ct_conv(val))
+    #end __setitem__
+
+    def __len__(self) :
+        return \
+            len(self.defs)
+    #end __len__
+
+    def __repr__(self) :
+        return \
+            repr(self.cur_vals)
+    #end __repr__
+
+#end Params
 
 def wrap_run_proc(run_proc) :
     "creates a wrapper around the given Python function, which" \
