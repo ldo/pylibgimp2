@@ -16,6 +16,29 @@ import libgimpgtk2
 from libgimpgtk2 import \
     GTK
 
+class Structure(ct.Structure) :
+
+    def __repr__(self) :
+        celf = type(self)
+        return \
+            (
+                    "%s(%s)"
+                %
+                    (
+                        celf.__name__,
+                        ", ".join
+                          (
+                                "%s = %s"
+                            %
+                                (f[0], repr(getattr(self, f[0])))
+                            for f in celf._fields_
+                          ),
+                    )
+            )
+    #end __repr__
+
+#end Structure
+
 class GIMP :
     "useful definitions adapted from files in /usr/include/gimp-2.0/."
 
@@ -93,7 +116,7 @@ class GIMP :
 
     # from libgimpbase/gimpparasite.h:
 
-    class Parasite(ct.Structure) :
+    class Parasite(Structure) :
         _fields_ = \
             [
                 ("name", ct.c_char_p),
@@ -105,7 +128,7 @@ class GIMP :
 
     # from libgimpcolor/gimpcolortypes.h:
 
-    class RGB(ct.Structure) :
+    class RGB(Structure) :
         _fields_ = \
             [
                 ("r", ct.c_double),
@@ -117,7 +140,7 @@ class GIMP :
 
     # from libgimp/gimp.h:
 
-    class ParamDef(ct.Structure) :
+    class ParamDef(Structure) :
         pass
     ParamDef._fields_ = \
         [
@@ -127,7 +150,7 @@ class GIMP :
         ]
     #end ParamDef
 
-    class ParamRegion(ct.Structure) :
+    class ParamRegion(Structure) :
         _fields_ = \
             [
                 ("x", ct.c_int32),
@@ -172,7 +195,7 @@ class GIMP :
         ]
     #end ParamData
 
-    class Param(ct.Structure) :
+    class Param(Structure) :
 
         def __repr__(self) :
             "useful for debugging."
@@ -196,7 +219,7 @@ class GIMP :
     NO_INIT_PROC = InitProc(0)
     NO_QUIT_PROC = QuitProc(0)
 
-    class PlugInInfo(ct.Structure) :
+    class PlugInInfo(Structure) :
         pass
     PlugInInfo._fields_ = \
         [
@@ -289,7 +312,7 @@ class GIMP :
 
     # from libgimpwidgets/gimpdialog.h:
 
-    class Dialog(ct.Structure) :
+    class Dialog(Structure) :
         _fields_ = \
             [
                 ("parent_instance", GTK.Dialog),
