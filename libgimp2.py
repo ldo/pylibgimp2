@@ -1106,7 +1106,7 @@ def wrap_run_proc(run_proc) :
         GIMP.RunProc(run_wrapper)
 #end wrap_run_proc
 
-def install_procedure(name : str, blurb : str, help: str, author : str, copyright : str, date : str, menu_label : str, image_types : str, type : GIMP.PDBProcType, params, return_vals) :
+def install_procedure(name : str, blurb : str, help: str, author : str, copyright : str, date : str, item_label : str, image_types : str, type : GIMP.PDBProcType, params, return_vals) :
     "installs a procedure in the procedure database. params and return_vals must be sequences" \
     " of dicts each with type, name and description fields."
     c_name = name.encode()
@@ -1115,7 +1115,7 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
     c_author = author.encode()
     c_copyright = copyright.encode()
     c_date = date.encode()
-    c_menu_label = menu_label.encode()
+    c_item_label = item_label.encode()
     c_image_types = image_types.encode()
     save_strs = []
     if params != None :
@@ -1132,7 +1132,7 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
         c_return_vals = None
         nr_return_vals = 0
     #end if
-    libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_menu_label, c_image_types, type, nr_params, nr_return_vals, c_params, c_return_vals)
+    libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_item_label, c_image_types, type, nr_params, nr_return_vals, c_params, c_return_vals)
 #end install_procedure
 
 #+
@@ -1141,11 +1141,11 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
 
 prog_name = os.path.basename(sys.argv[0])
 
-def plugin_menu_register(procname, menu_item_name) :
+def plugin_menu_register(procname, menu_name) :
     c_procname = str_encode(procname)
-    c_menu_item_name = str_encode(menu_item_name)
+    c_menu_name = str_encode(menu_name)
     return \
-        libgimp2.gimp_plugin_menu_register(c_procname, c_menu_item_name)
+        libgimp2.gimp_plugin_menu_register(c_procname, c_menu_name)
 #end plugin_menu_register
 
 def ui_init(preview : bool) :
@@ -1353,7 +1353,7 @@ class ManagedProcedures :
         self.installed = {}
     #end __init__
 
-    def plugin_install(self, name, blurb, help, author, copyright, date, menu_label, image_types, placement, action, params, return_vals, menu_item) :
+    def plugin_install(self, name, blurb, help, author, copyright, date, image_types, placement, action, params, return_vals, menu_name, item_label) :
         "registers a plugin action to be dispatched under the given name," \
         " and optionally attached to the given menu item. The params omit the" \
         " initial mandatory ones, which are determined from the placement. The" \
@@ -1363,6 +1363,9 @@ class ManagedProcedures :
         #end if
         if not isinstance(placement, UI_PLACEMENT) :
             raise TypeError("placement must be a UI_PLACEMENT")
+        #end if
+        if params == None :
+            params = []
         #end if
         do_ui = len(params) != 0
         if do_ui :
@@ -1388,8 +1391,8 @@ class ManagedProcedures :
                 "image_types" : image_types,
 
                 "do_ui" : do_ui,
-                "menu_label" : menu_label,
-                "menu_item" : menu_item,
+                "menu_name" : menu_name,
+                "item_label" : item_label,
 
                 "blurb" : blurb,
                 "help" : help,
@@ -1418,7 +1421,6 @@ def register_dispatched() :
             author = entry["author"],
             copyright = entry["copyright"],
             date = entry["date"],
-            menu_label = entry["menu_label"],
             image_types = entry["image_types"],
             type = entry["type"],
             params =
@@ -1426,9 +1428,10 @@ def register_dispatched() :
                 +
                     entry["params"].defs,
             return_vals = entry["return_vals"],
+            item_label = entry["item_label"],
           )
-        if entry["menu_item"] != None :
-            plugin_menu_register(name, "%s%s" % (entry["placement"].path_prefix, entry["menu_item"]))
+        if entry["menu_name"] != None :
+            plugin_menu_register(name, "%s%s" % (entry["placement"].path_prefix, entry["menu_name"]))
         #end if
     #end for
 #end register_dispatched
