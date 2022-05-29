@@ -1458,7 +1458,7 @@ class ManagedProcedures :
         if not isinstance(placement, UI_PLACEMENT) :
             raise TypeError("placement must be a UI_PLACEMENT")
         #end if
-        do_ui = len(params.defs) != 0
+        do_ui = len(params) != 0
         if do_ui :
             if (
                 not all
@@ -1466,7 +1466,7 @@ class ManagedProcedures :
                         p["type"] in (PARAMTYPE.FLOAT,)
                     or
                         not all(k in p for k in ("lower", "upper"))
-                    for p in params.defs
+                    for p in params
                   )
             ) :
                 raise ValueError("auto UI can only handle FLOAT params for now")
@@ -1477,7 +1477,7 @@ class ManagedProcedures :
                 "placement" : placement,
                 "type" : GIMP.PLUGIN,
                 "action" : action,
-                "params" : params,
+                "params" : Params(name, params),
                 "return_vals" : return_vals,
                 "image_types" : image_types,
 
@@ -1611,7 +1611,13 @@ def run_dispatched(name, params) :
         #end for
     #end if
     if confirm :
-        return_vals = entry["action"](params[1:])
+        args = params[1:entry["placement"].nr_required_params + 1]
+          # omit run_mode
+        kwargs = entry["params"].get_current()
+        return_vals = entry["action"](*args, **kwargs)
+        if return_vals == None :
+            return_vals = [(PARAMTYPE.STATUS, GIMP.PDB_SUCCESS)]
+        #end if
         if run_mode != GIMP.RUN_NONINTERACTIVE :
             displays_flush()
         #end if
