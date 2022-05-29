@@ -218,6 +218,7 @@ class GIMP :
         # (name, nparams, params, nreturn_vals, return_vals)
     NO_INIT_PROC = InitProc(0)
     NO_QUIT_PROC = QuitProc(0)
+    NO_QUERY_PROC = QueryProc(0)
 
     class PlugInInfo(Structure) :
         pass
@@ -592,6 +593,57 @@ def param_from_ct(param) :
         type.from_ct_conv(getattr(param.data, type.fieldname))
 #end param_from_ct
 
+class UI_PLACEMENT(enum.Enum) :
+    "information about required parameters for plugins registered" \
+    " at particular points in the UI."
+
+    # path_prefix, required_params (excluding run-mode)
+    TOOLBOX = ("<Toolbox>", ())
+    IMAGE = \
+        (
+            "<Image>",
+            (
+                {"type" : PARAMTYPE.IMAGE, "name" : "image", "description" : "Input image"},
+                {"type" : PARAMTYPE.DRAWABLE, "name" : "drawable", "description" : "Drawable to draw on"},
+            ),
+        )
+    LOAD = \
+        (
+            "<Load>",
+            (
+                {"type" : PARAMTYPE.STRING, "name" : "?1", "description" : "?1"},
+                {"type" : PARAMTYPE.STRING, "name" : "?2", "description" : "?2"},
+            ),
+        )
+    SAVE = \
+        (
+            "<Save>",
+            (
+                {"type" : PARAMTYPE.IMAGE, "name" : "image", "description" : "Input image"},
+                {"type" : PARAMTYPE.DRAWABLE, "name" : "drawable", "description" : "Drawable to draw on"},
+                {"type" : PARAMTYPE.STRING, "name" : "?1", "description" : "?1"},
+                {"type" : PARAMTYPE.STRING, "name" : "?2", "description" : "?2"},
+            ),
+        )
+
+    @property
+    def path_prefix(self) :
+        return \
+            self.value[0]
+    #end path_prefix
+
+    @property
+    def required_params(self) :
+        return \
+            (
+                [{"type" : PARAMTYPE.INT32, "name" : "run-mode", "description" : "invocation mode"}]
+            +
+                list(dict(p) for p in self.value[1])
+            )
+    #end required_params
+
+#end UI_PLACEMENT
+
 #+
 # Routine arg/result types
 #-
@@ -919,14 +971,14 @@ class Params :
             or
                 not all(isinstance(e, dict) for e in defs)
             or
-                not all(k in e for k in ("type", "name", "description", "default") for e in defs)
+                not all(k in e for k in ("type", "name", "description") for e in defs)
             or
                 not all(isinstance(e["type"], PARAMTYPE) for e in defs)
         ) :
             raise TypeError \
               (
                 "defs must be sequence of dicts, each with"
-                " type, name, description and default keys"
+                " type, name and description keys"
               )
         #end if
         self.defs = list(defs)
@@ -943,7 +995,9 @@ class Params :
         self.ct_struct = ct_struct
         default_vals = ct_struct()
         for e in defs :
-            setattr(default_vals, e["name"], e["type"].to_ct_conv(e["default"]))
+            if "default" in e :
+                setattr(default_vals, e["name"], e["type"].to_ct_conv(e["default"]))
+            #end if
         #end for
         self.default_vals = default_vals
         self.cur_vals = ct_struct.from_buffer_copy(default_vals)
@@ -1370,8 +1424,31 @@ class Dialog(Widget) :
 # Mainline
 #-
 
-def main(plugin_info : GIMP.PlugInInfo) :
+def main(*, init_proc = None, quit_proc = None, query_proc = None, run_proc) :
     "to be invoked as your plugin mainline."
+    if init_proc != None :
+        c_init_proc = GIMP.InitProc(init_proc)
+    else :
+        c_init_proc = GIMP.NO_INIT_PROC
+    #end if
+    if quit_proc != None :
+        c_quit_proc = GIMP.QuitProc(quit_proc)
+    else :
+        c_quit_proc = GIMP.NO_QUIT_PROC
+    #end if
+    if query_proc != None :
+        c_query_proc = GIMP.QueryProc(query_proc)
+    else :
+        c_query_proc = GIMP.NO_QUERY_PROC
+    #end if
+    c_run_proc = wrap_run_proc(run_proc)
+    plugin_info = GIMP.PlugInInfo \
+      (
+        init_proc = c_init_proc,
+        quit_proc = c_quit_proc,
+        query_proc = c_query_proc,
+        run_proc = c_run_proc
+      )
     save_strs = []
     argv = seq_to_ct \
       (
