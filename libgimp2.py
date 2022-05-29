@@ -683,6 +683,12 @@ libgimp2.gimp_drawable_flush.restype = None
 
 # from libgimp/gimpdrawable_pdb.h:
 
+libgimp2.gimp_drawable_width.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_width.restype = ct.c_int
+libgimp2.gimp_drawable_height.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_height.restype = ct.c_int
+libgimp2.gimp_drawable_offsets.argtypes = (ct.c_int32, ct.POINTER(ct.c_int), ct.POINTER(ct.c_int))
+libgimp2.gimp_drawable_offsets.restype = ct.c_bool
 libgimp2.gimp_drawable_merge_shadow.argtypes = (ct.c_int32, ct.c_bool)
 libgimp2.gimp_drawable_merge_shadow.restype = ct.c_bool
 libgimp2.gimp_drawable_update.argtypes = (ct.c_int32, ct.c_int, ct.c_int, ct.c_int, ct.c_int)
