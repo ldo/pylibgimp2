@@ -112,6 +112,15 @@ libgtk2.gtk_widget_show.restype = None
 libgtk2.gtk_widget_destroy.argtypes = (ct.c_void_p,)
 libgtk2.gtk_widget_destroy.restype = None
 
+# from gtk-2.0/gtk/gtklabel.h:
+
+libgtk2.gtk_label_new.argtypes = (ct.c_char_p,)
+libgtk2.gtk_label_new.restype = ct.c_void_p
+libgtk2.gtk_label_set_markup.argtypes = (ct.c_void_p, ct.c_char_p)
+libgtk2.gtk_label_set_markup.restype = None
+libgtk2.gtk_label_set_use_markup.argtypes = (ct.c_void_p, ct.c_bool)
+libgtk2.gtk_label_set_use_markup.restype = None
+
 # from gtk-2.0/gtk/gtkcontainer.h:
 
 libgtk2.gtk_container_set_border_width.argtypes = (ct.c_void_p, ct.c_uint)
@@ -127,6 +136,11 @@ libgtk2.gtk_adjustment_set_value.argtypes = (ct.c_void_p, ct.c_double)
 libgtk2.gtk_adjustment_set_value.restype = None
 libgtk2.gtk_adjustment_configure.argtypes = (ct.c_void_p, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double, ct.c_double)
 libgtk2.gtk_adjustment_configure.restype = None
+
+# from gtk-2.0/gtk/gtkspinbutton.h:
+
+libgtk2.gtk_spin_button_get_value.argtypes = (ct.c_void_p,)
+libgtk2.gtk_spin_button_get_value.restype = ct.c_double
 
 # from gtk-2.0/gtk/gtktable.h:
 

@@ -1085,6 +1085,9 @@ def ui_init(preview : bool) :
 #end ui_init
 
 class Widget :
+    "base wrapper for various Gimp-specific GTK widget classes. Do not" \
+    " instantiate this or any of its subclasses directly; use the various" \
+    " create methods as appropriate."
 
     __slots__ = ("_gtkobj", "_wrappers")
 
@@ -1121,7 +1124,60 @@ class Widget :
 
 #end Widget
 
-class ScaleEntry(Widget) :
+class Label(Widget) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, text) :
+        return \
+            celf(libgimpgtk2.libgtk2.gtk_label_new(str_encode(text)))
+    #end create
+
+    def set_markup(self, text) :
+        libgimpgtk2.libgtk2.gtk_label_set_markup(self._gtkobj, str_encode(text))
+    #end set_markup
+
+    def set_use_markup(self, use_markup) :
+        libgimpgtk2.libgtk2.gtk_label_set_use_markup(self._gtkobj, use_markup)
+    #end set_use_markup
+
+#end Label
+
+class Adjustment(Widget) :
+
+    __slots__ = ()
+
+#end Adjustment
+
+class SpinButton(Widget) :
+    "doesn’t seem to work."
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, adjustment, climb_rate : float, digits : int) :
+        if not isinstance(adjustment, Adjustment) :
+            raise TypeError("adjustment must be an Adjustment")
+        #end if
+        return \
+            celf(libgimpui2.gimp_spin_button_new_(adjustment._gtkobj, climb_rate, digits))
+    #end create
+
+    @classmethod
+    def create_with_range(celf, min : float, max : float, step : float) :
+        return \
+            celf(libgimpui2.gimp_spin_button_new_with_range(min, max, step))
+    #end create_with_range
+
+    def get_value(self) :
+        return \
+            libgimpgtk2.libgtk2.gtk_spin_button_get_value(self._gtkobj)
+    #end get_value
+
+#end SpinButton
+
+class ScaleEntry(Adjustment) :
 
     __slots__ = ()
 
