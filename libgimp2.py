@@ -902,7 +902,7 @@ class PDB :
     " Conversions between Python objects and GIMP.Param representation will" \
     " happen automatically, according to the argument and return ParamDefs" \
     " registered for the procedure, so you never pass or get back any" \
-    " PDBArgType codes." \
+    " PDBArgType codes.\n" \
     "\n" \
     "Besides the general “pdb” cache, there are also ones called “pdb1”, for" \
     " procedures assumed to return a single result, and “pdbpi” for plugin" \
