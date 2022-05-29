@@ -1,0 +1,37 @@
+This project came into existence after I discovered that GIMP had lost
+its Python support in Debian.
+
+I understand that GIMP 3 is requiring a lot of work, and the Python
+2-to-3 transition has not helped matters. Looking in a recent GIMP 2
+source tree, I see that the files in the `plug-ins/pygimp` directory
+total over 30,000 lines. That’s a lot of C code to have to rework to
+bring the Python support up to date.
+
+But I feel a lot of that is unnecessary. It is quite possible to
+create wrappers for the libgimp API in Python itself, using the
+ever-dependable
+[`ctypes`](https://docs.python.org/3/library/ctypes.html) module. And
+this can be done with substantially less code than doing it in C.
+
+Hence this project. The aim is to let you write plugins for GIMP 2.x
+in Python 3. In future, an adaptation of this project should be able
+to work with GIMP 3 instead. Since GIMP plugins actually run as
+executables in separate processes, it is completely independent of any
+Python support that GIMP may or may not have, now or in the future.
+
+A consequence of this is, since the libgimpxx libraries that I use
+know nothing of Python, I cannot make use of the “standard” Python
+wrappers for GLib/GTK (PyGTK for GTK 2.x, GObject Introspection for
+later versions). I have to create my own, to interoperate with my
+wrappers for the GIMP API.
+
+This is still a work in progress. I have only implemented a fraction of
+the wrappers for the full GIMP API, not to mention GTK 2. So far the
+code is complete enough to support my own simple plugins available on
+[GitHub](https://github.com/ldo/gimp_filters). I may or may not continue
+adding to it.
+
+Anyway, for now, enjoy.
+
+Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
+2022 May 29
