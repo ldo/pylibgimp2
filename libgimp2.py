@@ -858,6 +858,7 @@ def procedural_db_proc_info(procname : str) :
     if success :
         result = \
             {
+                "name" : procname,
                 "blurb" : str_decode(c_blurb.value),
                 "help" : str_decode(c_help.value),
                 "author" : str_decode(c_author.value),
@@ -901,12 +902,21 @@ class PDB :
     " Conversions between Python objects and GIMP.Param representation will" \
     " happen automatically, according to the argument and return ParamDefs" \
     " registered for the procedure, so you never pass or get back any" \
-    " PDBArgType codes."
+    " PDBArgType codes." \
+    "\n" \
+    "Besides the general “pdb” cache, there are also ones called “pdb1”, for" \
+    " procedures assumed to return a single result, and “pdbpi” for plugin" \
+    " procedures, that take an initial argument which is the run mode (set to" \
+    " GIMP.RUN_NONINTERACTIVE for your convenience). These save you having to" \
+    " extract the returned value and pass the extra arg, respectively."
 
-    __slots__ = ("_procs",)
+    __slots__ = ("_procs", "_procinfo_check", "_params_filter", "_returns_filter")
 
-    def __init__(self) :
+    def __init__(self, procinfo_check = None, params_filter = None, returns_filter = None) :
         self._procs = {}
+        self._procinfo_check = procinfo_check
+        self._params_filter = params_filter
+        self._returns_filter = returns_filter
     #end __init__
 
     def __getattr__(self, procname) :
@@ -916,6 +926,9 @@ class PDB :
             c_procname = str_encode(procname)
 
             def proc_wrapper(*args) :
+                if self._params_filter != None :
+                    args = self._params_filter(args)
+                #end if
                 c_args = params_to_ct(paramdefs, args)
                 c_nr_returns = ct.c_int()
                 c_returns = libgimp2.gimp_run_procedure2(c_procname, ct.byref(c_nr_returns), len(args), c_args)
@@ -932,6 +945,10 @@ class PDB :
                 returns = returns[1:]
                 if len(returns) == 0 :
                     returns = None
+                else :
+                    if self._returns_filter != None :
+                        returns = self._returns_filter(returns)
+                    #end if
                 #end if
                 return \
                     returns
@@ -949,6 +966,9 @@ class PDB :
             if procinfo == None :
                 raise AttributeError("no such procedure registered as “%s”" % procname)
             #end if
+            if self._procinfo_check != None :
+                self._procinfo_check(procinfo)
+            #end if
             self._procs[procname] = def_proc_wrapper(procinfo["args"], procinfo["return_vals"])
         #end if
         return \
@@ -957,10 +977,49 @@ class PDB :
 
 #end PDB
 
-pdb = PDB()
-  # After they made you...
-del PDB
-  # ... they broke the mould.
+class PDBExtra :
+    # additional checks/filters for particular PDB instances.
+
+    def check_one_result(procinfo) :
+        # ensures the procedure only returns one result (besides the status).
+        if len(procinfo["return_vals"]) != 1 :
+            raise TypeError("procedure %s does not return a single non-status result: %s" % (procinfo["name"], repr(procinfo)))
+        #end if
+    check_one_result
+
+    def check_takes_run_mode(procinfo) :
+        if len(procinfo["args"]) == 0 or procinfo["args"][0]["type"] != PARAMTYPE.INT32 :
+            raise TypeError("procedure %s does not take run mode as first arg" % procinfo["name"])
+        #end if
+    #end check_takes_run_mode
+
+    def prepend_run_mode(args) :
+        return \
+            (GIMP.RUN_NONINTERACTIVE,) + args
+    #end prepend_run_mode
+
+    def extract_single_result(results) :
+        assert len(results) == 1
+        return \
+            results[0]
+    #end extract_single_result
+
+#end PDBExtra
+
+pdb = PDB() # everything allowed here, but caller has to deal with it
+pdb1 = PDB \
+  (
+    procinfo_check = PDBExtra.check_one_result,
+    returns_filter = PDBExtra.extract_single_result
+  )
+  # those returning just one result
+pdbpi = PDB \
+  (
+    procinfo_check = PDBExtra.check_takes_run_mode,
+    params_filter = PDBExtra.prepend_run_mode
+  )
+  # plugins, requiring the first arg to be the run mode
+del PDB, PDBExtra
 
 def displays_flush() :
     libgimp2.gimp_displays_flush()
