@@ -219,6 +219,7 @@ class GIMP :
     NO_INIT_PROC = InitProc(0)
     NO_QUIT_PROC = QuitProc(0)
     NO_QUERY_PROC = QueryProc(0)
+    NO_RUN_PROC = RunProc(0)
 
     class PlugInInfo(Structure) :
         pass
@@ -631,6 +632,12 @@ class UI_PLACEMENT(enum.Enum) :
         return \
             self.value[0]
     #end path_prefix
+
+    @property
+    def nr_required_params(self) :
+        return \
+            len(self.value[1])
+    #end nr_required_params
 
     @property
     def required_params(self) :
@@ -1125,6 +1132,8 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
 # User Interface
 #-
 
+prog_name = os.path.basename(sys.argv[0])
+
 def plugin_menu_register(procname, menu_item_name) :
     c_procname = str_encode(procname)
     c_menu_item_name = str_encode(menu_item_name)
@@ -1134,7 +1143,6 @@ def plugin_menu_register(procname, menu_item_name) :
 
 def ui_init(preview : bool) :
     "need to call this before using any UI functions."
-    prog_name = os.path.basename(sys.argv[0])
     libgimpui2.gimp_ui_init(str_encode(prog_name), preview)
 #end ui_init
 
@@ -1424,7 +1432,202 @@ class Dialog(Widget) :
 # Mainline
 #-
 
-def main(*, init_proc = None, quit_proc = None, query_proc = None, run_proc) :
+class ManagedProcedures :
+    "easy management of one or more plugin action callbacks to be registered" \
+    " with register_dispatched and invoked by run_dispatched. The plugin_install" \
+    " method should be invoked for all your plugin actions in your script mainline," \
+    " outside any of the actual Gimp callbacks. This is because plugin registration" \
+    " and invocation will be done in separate process instances, so we need to" \
+    " ensure the dispatch table is always correctly built, for both registration" \
+    " and invocation purposes."
+
+    __slots__ = ("installed",)
+
+    def __init__(self) :
+        self.installed = {}
+    #end __init__
+
+    def plugin_install(self, name, blurb, help, author, copyright, date, menu_label, image_types, placement, action, params, return_vals, menu_item) :
+        "registers a plugin action to be dispatched under the given name," \
+        " and optionally attached to the given menu item. The params omit the" \
+        " initial mandatory ones, which are determined from the placement. The" \
+        " type is always GIMP.PLUGIN for now."
+        if name in self.installed :
+            raise RuntimeError("duplicate installation of “%s”" % name)
+        #end if
+        if not isinstance(placement, UI_PLACEMENT) :
+            raise TypeError("placement must be a UI_PLACEMENT")
+        #end if
+        do_ui = len(params.defs) != 0
+        if do_ui :
+            if (
+                not all
+                  (
+                        p["type"] in (PARAMTYPE.FLOAT,)
+                    or
+                        not all(k in p for k in ("lower", "upper"))
+                    for p in params.defs
+                  )
+            ) :
+                raise ValueError("auto UI can only handle FLOAT params for now")
+            #end if
+        #end if
+        self.installed[name] = \
+            {
+                "placement" : placement,
+                "type" : GIMP.PLUGIN,
+                "action" : action,
+                "params" : params,
+                "return_vals" : return_vals,
+                "image_types" : image_types,
+
+                "do_ui" : do_ui,
+                "menu_label" : menu_label,
+                "menu_item" : menu_item,
+
+                "blurb" : blurb,
+                "help" : help,
+                "author" : author,
+                "copyright" : copyright,
+                "date" : date,
+            }
+    #end plugin_install
+
+#end ManagedProcedures
+
+managed_procedures = ManagedProcedures()
+  # There can be ...
+del ManagedProcedures
+  # ... only one
+
+def register_dispatched() :
+    "convenience query_proc which automatically registers all entries in" \
+    " managed_procedures with Gimp."
+    for name, entry in managed_procedures.installed.items() :
+        install_procedure \
+          (
+            name = name,
+            blurb = entry["blurb"],
+            help = entry["help"],
+            author = entry["author"],
+            copyright = entry["copyright"],
+            date = entry["date"],
+            menu_label = entry["menu_label"],
+            image_types = entry["image_types"],
+            type = entry["type"],
+            params =
+                    entry["placement"].required_params
+                +
+                    entry["params"].defs,
+            return_vals = entry["return_vals"],
+          )
+        if entry["menu_item"] != None :
+            plugin_menu_register(name, "%s%s" % (entry["placement"].path_prefix, entry["menu_item"]))
+        #end if
+    #end for
+#end register_dispatched
+
+def run_dispatched(name, params) :
+    "convenience run_proc which automatically provides a simple settings UI" \
+    " for your parameters as appropriate, before invoking your actual installed" \
+    " action to perform the operation on the image."
+
+    entry = managed_procedures.installed[name]
+
+    def do_settings() :
+        ui_init(False)
+        settings = Dialog.create \
+          (
+            title = name,
+            role = "%s settings" % name,
+            parent = None,
+            flags = 0,
+            help_func = None,
+            help_id = name,
+            buttons =
+                (
+                    ("Cancel", GTK.RESPONSE_CANCEL),
+                    ("OK", GTK.RESPONSE_OK),
+                )
+          )
+        settings.set_transient()
+        main_vbox = Box.create(GTK.ORIENTATION_VERTICAL, 12)
+        main_vbox.set_border_width(12)
+        settings.get_content_area().pack_start(main_vbox, expand = True, fill = True, padding = 0)
+        main_vbox.show()
+        table = Table.create \
+          (
+            nr_rows = len(entry["params"].defs),
+            nr_cols = 3,
+            homogeneous = False
+          )
+        table.set_col_spacings(6).set_row_spacings(6)
+        main_vbox.pack_start(table, expand = False, fill = False, padding = 0)
+        table.show()
+        for i, param in enumerate(entry["params"].defs) :
+            slider = table.scale_entry_new \
+              (
+                column = 0,
+                row = i,
+                text = param["description"],
+                scale_width = 100,
+                spinbutton_width = 2,
+                value = entry["params"][param["name"]],
+                lower = param["lower"],
+                upper = param["upper"],
+                step_increment = param.get("step_increment", 1),
+                page_increment = param.get("page_increment", 10),
+                digits = 0,
+                constrain = True,
+                unconstrained_lower = 0,
+                unconstrained_upper = 0,
+                tooltip = None,
+                help_id = None
+              )
+            slider.signal_connect \
+              (
+                name = "value-changed",
+                handler = libgimpui2.gimp_double_adjustment_update,
+                arg = entry["params"].field_addr(param["name"])
+              )
+        #end for
+        settings.show()
+        confirm = settings.run_and_close() == GTK.RESPONSE_OK
+        return \
+            confirm
+    #end do_settings
+
+#begin run_dispatched
+    run_mode = params[0]
+    entry["params"].load_data()
+    confirm = True # to begin with
+    if run_mode == GIMP.RUN_INTERACTIVE :
+        if entry["do_ui"] :
+            confirm = do_settings()
+        #end if
+    elif run_mode == GIMP.RUN_NONINTERACTIVE :
+        for i, param in enumerate(entry["params"][entry["placement"].nr_required_params:]) :
+            entry["params"][entry["params"].ct_struct._fields_[i][0]] = param
+        #end for
+    #end if
+    if confirm :
+        return_vals = entry["action"](params[1:])
+        if run_mode != GIMP.RUN_NONINTERACTIVE :
+            displays_flush()
+        #end if
+        if run_mode == GIMP.RUN_INTERACTIVE :
+            if entry["do_ui"] :
+                entry["params"].save_data()
+            #end if
+        #end if
+    else :
+        return_vals = [(PARAMTYPE.STATUS, GIMP.PDB_CANCEL)]
+    #end if
+    return \
+        return_vals
+#end run_dispatched
+
+def main(*, init_proc = None, quit_proc = None, query_proc = None, run_proc = None) :
     "to be invoked as your plugin mainline."
     if init_proc != None :
         c_init_proc = GIMP.InitProc(init_proc)
@@ -1436,12 +1639,27 @@ def main(*, init_proc = None, quit_proc = None, query_proc = None, run_proc) :
     else :
         c_quit_proc = GIMP.NO_QUIT_PROC
     #end if
-    if query_proc != None :
-        c_query_proc = GIMP.QueryProc(query_proc)
+    if query_proc == None and run_proc == None :
+        if len(managed_procedures.installed) != 0 :
+            c_query_proc = GIMP.QueryProc(register_dispatched)
+            c_run_proc = wrap_run_proc(run_dispatched)
+        else :
+            raise ValueError \
+              (
+                "no query_proc or run_proc specified, and no managed procedures installed"
+              )
+        #end if
     else :
-        c_query_proc = GIMP.NO_QUERY_PROC
+        if query_proc != None :
+            c_query_proc = GIMP.QueryProc(query_proc)
+        else :
+            c_query_proc = GIMP.NO_QUERY_PROC
+        #end if
+        if run_proc == None :
+            raise ValueError("missing run_proc")
+        #end if
+        c_run_proc = wrap_run_proc(run_proc)
     #end if
-    c_run_proc = wrap_run_proc(run_proc)
     plugin_info = GIMP.PlugInInfo \
       (
         init_proc = c_init_proc,
