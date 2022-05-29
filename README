@@ -33,5 +33,9 @@ adding to it.
 
 Anyway, for now, enjoy.
 
+To see some small examples of this wrapper in use, have a look at
+my `gimp_filters` project on [`GitLab`](https://gitlab.com/ldo/gimp_filters)
+or [`GitHub`](https://github.com/ldo/gimp_filters).
+
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
 2022 May 29
