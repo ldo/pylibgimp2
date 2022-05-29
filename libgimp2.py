@@ -14,7 +14,11 @@ import enum
 import ctypes as ct
 import libgimpgtk2
 from libgimpgtk2 import \
-    GTK
+    GTK, \
+    Widget, \
+    str_encode, \
+    str_encode_optional, \
+    str_decode
 
 class Structure(ct.Structure) :
 
@@ -324,9 +328,6 @@ class GIMP :
 #end GIMP
 
 ident = lambda x : x
-str_encode = lambda s : s.encode()
-str_encode_optional = lambda s : (lambda : None, lambda : s.encode())[s != None]()
-str_decode = lambda s : s.decode()
 
 def def_c_char_p_encode(save_strs) :
 
@@ -1146,72 +1147,6 @@ def ui_init(preview : bool) :
     libgimpui2.gimp_ui_init(str_encode(prog_name), preview)
 #end ui_init
 
-class Widget :
-    "base wrapper for various Gimp-specific GTK widget classes. Do not" \
-    " instantiate this or any of its subclasses directly; use the various" \
-    " create methods as appropriate."
-
-    __slots__ = ("_gtkobj", "_wrappers")
-
-    def __init__(self, _gtkobj) :
-        self._gtkobj = _gtkobj
-        self._wrappers = [] # for saving CFUNCTYPE wrappers to ensure they don’t randomly disappear
-    #end __init__
-
-    def destroy(self) :
-        if self._gtkobj != None :
-            libgimpgtk2.libgtk2.gtk_widget_destroy(self._gtkobj)
-            self._gtkobj = None
-        #end if
-    #end destroy
-
-    def show(self) :
-        libgimpgtk2.libgtk2.gtk_widget_show(self._gtkobj)
-        return \
-            self
-    #end show
-
-    def signal_connect(self, name, handler, arg = None) :
-        if isinstance(handler, ct._CFuncPtr) :
-            c_handler = handler
-        else :
-            c_handler = libgimpgtk2.GCallback(handler)
-        #end if
-        self._wrappers.append(c_handler)
-        libgimpgtk2.libgobject2.g_signal_connect_data \
-            (self._gtkobj, str_encode(name), c_handler, arg, None, 0)
-        return \
-            self
-    #end signal_connect
-
-#end Widget
-
-class Label(Widget) :
-
-    __slots__ = ()
-
-    @classmethod
-    def create(celf, text) :
-        return \
-            celf(libgimpgtk2.libgtk2.gtk_label_new(str_encode(text)))
-    #end create
-
-    def set_markup(self, text) :
-        libgimpgtk2.libgtk2.gtk_label_set_markup(self._gtkobj, str_encode(text))
-    #end set_markup
-
-    def set_use_markup(self, use_markup) :
-        libgimpgtk2.libgtk2.gtk_label_set_use_markup(self._gtkobj, use_markup)
-    #end set_use_markup
-
-#end Label
-
-class Adjustment(Widget) :
-
-    __slots__ = ()
-
-#end Adjustment
-
 class SpinButton(Widget) :
     "doesn’t seem to work."
 
@@ -1239,44 +1174,9 @@ class SpinButton(Widget) :
 
 #end SpinButton
 
-class ScaleEntry(Adjustment) :
+class Table(libgimpgtk2.Table) :
 
     __slots__ = ()
-
-#end ScaleEntry
-
-class Container(Widget) :
-
-    __slots__ = ()
-
-    def set_border_width(self, border_width) :
-        libgimpgtk2.libgtk2.gtk_container_set_border_width(self._gtkobj, border_width)
-    #end set_border_width
-
-#end Container
-
-class Table(Container) :
-
-    __slots__ = ()
-
-    @classmethod
-    def create(celf, nr_rows, nr_cols, homogeneous) :
-        gtkobj = libgimpgtk2.libgtk2.gtk_table_new(nr_rows, nr_cols, homogeneous)
-        return \
-            celf(gtkobj)
-    #end create
-
-    def set_col_spacings(self, spacings) :
-        libgimpgtk2.libgtk2.gtk_table_set_col_spacings(self._gtkobj, spacings)
-        return \
-            self
-    #end set_col_spacings
-
-    def set_row_spacings(self, spacings) :
-        libgimpgtk2.libgtk2.gtk_table_set_row_spacings(self._gtkobj, spacings)
-        return \
-            self
-    #end set_row_spacings
 
     def scale_entry_new(self, column : int, row : int, text : str, scale_width : int, spinbutton_width : int, value : float, lower : float, upper : float, step_increment : float, page_increment : float, digits : int, constrain : bool, unconstrained_lower : float, unconstrained_upper : float, tooltip : str, help_id : str) :
         c_text = str_encode(text)
@@ -1284,12 +1184,12 @@ class Table(Container) :
         c_help_id = str_encode_optional(help_id)
         result = libgimpui2.gimp_scale_entry_new(self._gtkobj, column, row, c_text, scale_width, spinbutton_width, value, lower, upper, step_increment, page_increment, digits, constrain, unconstrained_lower, unconstrained_upper, c_tooltip, c_help_id)
         return \
-            ScaleEntry(result)
+            libgimpgtk2.ScaleEntry(result)
     #end scale_entry_new
 
 #end Table
 
-class Box(Container) :
+class Box(libgimpgtk2.Container) :
     "high-level wrapper for a GTK layout box. Do not instantiate directly; use" \
     " the create method or Dialog.get_content_area."
 

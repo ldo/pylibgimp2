@@ -9,6 +9,10 @@ functionality to enable implementing a basic UI for plug-ins for Gimp 2.
 
 import ctypes as ct
 
+str_encode = lambda s : s.encode()
+str_encode_optional = lambda s : (lambda : None, lambda : s.encode())[s != None]()
+str_decode = lambda s : s.decode()
+
 CANT_BE_BOTHERED_FOR_NOW = lambda : []
   # for _fields_ definitions I can’t be bothered to fill in for now
 
@@ -37,6 +41,7 @@ G_CONNECT_AFTER = 1 << 0
 G_CONNECT_SWAPPED = 1 << 1
 
 class GTK :
+    "useful definitions adapted from files in /usr/include/gtk-2.0/."
 
     # from gtk-2.0/gtk/gtkenums.h:
 
@@ -175,3 +180,114 @@ libgtk2.gtk_dialog_get_action_area.argtypes = (ct.c_void_p,)
 libgtk2.gtk_dialog_get_action_area.restype = ct.c_void_p
 libgtk2.gtk_dialog_get_content_area.argtypes = (ct.c_void_p,)
 libgtk2.gtk_dialog_get_content_area.restype = ct.c_void_p
+
+#+
+# Higher-level stuff follows
+#-
+
+class Widget :
+    "base wrapper for various Gimp-specific GTK widget classes. Do not" \
+    " instantiate this or any of its subclasses directly; use the various" \
+    " create methods as appropriate."
+
+    __slots__ = ("_gtkobj", "_wrappers")
+
+    def __init__(self, _gtkobj) :
+        self._gtkobj = _gtkobj
+        self._wrappers = [] # for saving CFUNCTYPE wrappers to ensure they don’t randomly disappear
+    #end __init__
+
+    def destroy(self) :
+        if self._gtkobj != None :
+            libgtk2.gtk_widget_destroy(self._gtkobj)
+            self._gtkobj = None
+        #end if
+    #end destroy
+
+    def show(self) :
+        libgtk2.gtk_widget_show(self._gtkobj)
+        return \
+            self
+    #end show
+
+    def signal_connect(self, name, handler, arg = None) :
+        if isinstance(handler, ct._CFuncPtr) :
+            c_handler = handler
+        else :
+            c_handler = GCallback(handler)
+        #end if
+        self._wrappers.append(c_handler)
+        libgobject2.g_signal_connect_data \
+            (self._gtkobj, str_encode(name), c_handler, arg, None, 0)
+        return \
+            self
+    #end signal_connect
+
+#end Widget
+
+class Label(Widget) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, text) :
+        return \
+            celf(libgtk2.gtk_label_new(str_encode(text)))
+    #end create
+
+    def set_markup(self, text) :
+        libgtk2.gtk_label_set_markup(self._gtkobj, str_encode(text))
+    #end set_markup
+
+    def set_use_markup(self, use_markup) :
+        libgtk2.gtk_label_set_use_markup(self._gtkobj, use_markup)
+    #end set_use_markup
+
+#end Label
+
+class Adjustment(Widget) :
+
+    __slots__ = ()
+
+#end Adjustment
+
+class ScaleEntry(Adjustment) :
+
+    __slots__ = ()
+
+#end ScaleEntry
+
+class Container(Widget) :
+
+    __slots__ = ()
+
+    def set_border_width(self, border_width) :
+        libgtk2.gtk_container_set_border_width(self._gtkobj, border_width)
+    #end set_border_width
+
+#end Container
+
+class Table(Container) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, nr_rows, nr_cols, homogeneous) :
+        gtkobj = libgtk2.gtk_table_new(nr_rows, nr_cols, homogeneous)
+        return \
+            celf(gtkobj)
+    #end create
+
+    def set_col_spacings(self, spacings) :
+        libgtk2.gtk_table_set_col_spacings(self._gtkobj, spacings)
+        return \
+            self
+    #end set_col_spacings
+
+    def set_row_spacings(self, spacings) :
+        libgtk2.gtk_table_set_row_spacings(self._gtkobj, spacings)
+        return \
+            self
+    #end set_row_spacings
+
+#end Table
