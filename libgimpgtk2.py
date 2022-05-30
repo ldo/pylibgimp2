@@ -45,6 +45,12 @@ class GTK :
 
     # from gtk-2.0/gtk/gtkenums.h:
 
+    AttachOptions = ct.c_uint
+    # values for AttachOptions:
+    EXPAND = 1 << 0
+    SHRINK = 1 << 1
+    FILL = 1 << 2
+
     Orientation = ct.c_uint
     # values for Orientation:
     ORIENTATION_HORIZONTAL = 0
@@ -116,6 +122,10 @@ libgtk2.gtk_widget_show.argtypes = (ct.c_void_p,)
 libgtk2.gtk_widget_show.restype = None
 libgtk2.gtk_widget_destroy.argtypes = (ct.c_void_p,)
 libgtk2.gtk_widget_destroy.restype = None
+libgtk2.gtk_widget_set_tooltip_text.argtypes = (ct.c_void_p, ct.c_char_p)
+libgtk2.gtk_widget_set_tooltip_text.restype = None
+libgtk2.gtk_widget_set_tooltip_markup.argtypes = (ct.c_void_p, ct.c_char_p)
+libgtk2.gtk_widget_set_tooltip_markup.restype = None
 
 # from gtk-2.0/gtk/gtklabel.h:
 
@@ -125,6 +135,8 @@ libgtk2.gtk_label_set_markup.argtypes = (ct.c_void_p, ct.c_char_p)
 libgtk2.gtk_label_set_markup.restype = None
 libgtk2.gtk_label_set_use_markup.argtypes = (ct.c_void_p, ct.c_bool)
 libgtk2.gtk_label_set_use_markup.restype = None
+libgtk2.gtk_label_set_mnemonic_widget.argtypes = (ct.c_void_p, ct.c_void_p)
+libgtk2.gtk_label_set_mnemonic_widget.restype = None
 
 # from gtk-2.0/gtk/gtkcontainer.h:
 
@@ -151,6 +163,10 @@ libgtk2.gtk_spin_button_get_value.restype = ct.c_double
 
 libgtk2.gtk_table_new.argtypes = (ct.c_uint, ct.c_uint, ct.c_bool)
 libgtk2.gtk_table_new.restype = ct.c_void_p
+libgtk2.gtk_table_attach.argtypes = (ct.c_void_p, ct.c_void_p, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint, GTK.AttachOptions, GTK.AttachOptions, ct.c_uint, ct.c_uint)
+libgtk2.gtk_table_attach.restype = None
+libgtk2.gtk_table_attach_defaults.argtypes = (ct.c_void_p, ct.c_void_p, ct.c_uint, ct.c_uint, ct.c_uint, ct.c_uint)
+libgtk2.gtk_table_attach_defaults.restype = None
 libgtk2.gtk_table_set_row_spacing.argtypes = (ct.c_void_p, ct.c_uint, ct.c_uint)
 libgtk2.gtk_table_set_row_spacing.restype = None
 libgtk2.gtk_table_set_row_spacings.argtypes = (ct.c_void_p, ct.c_uint)
@@ -223,6 +239,14 @@ class Widget :
             self
     #end signal_connect
 
+    def set_tooltip_text(self, text) :
+        libgtk2.gtk_widget_set_tooltip_text(self._gtkobj, str_encode(text))
+    #end set_tooltip_text
+
+    def set_tooltip_markup(self, markup) :
+        libgtk2.gtk_widget_set_tooltip_markup(self._gtkobj, str_encode(markup))
+    #end set_tooltip_markup
+
 #end Widget
 
 class Label(Widget) :
@@ -242,6 +266,13 @@ class Label(Widget) :
     def set_use_markup(self, use_markup) :
         libgtk2.gtk_label_set_use_markup(self._gtkobj, use_markup)
     #end set_use_markup
+
+    def set_mnemonic_widget(self, widget) :
+        if not isinstance(widget, Widget) :
+            raise TypeError("widget must be a Widget")
+        #end if
+        libgtk2.gtk_label_set_mnemonic_widget(self._gtkobj, widget._gtkobj)
+    #end set_mnemonic_widget
 
 #end Label
 
@@ -277,6 +308,20 @@ class Table(Container) :
         return \
             celf(gtkobj)
     #end create
+
+    def attach(self, child, left_attach, right_attach, top_attach, bottom_attach, xoptions : GTK.AttachOptions, yoptions : GTK.AttachOptions, xpadding, ypadding) :
+        if not isinstance(child, Widget) :
+            raise TypeError("child must be a Widget")
+        #end if
+        libgtk2.gtk_table_attach(self._gtkobj, child._gtkobj, left_attach, right_attach, top_attach, bottom_attach, xoptions, yoptions, xpadding, ypadding)
+    #end attach
+
+    def attach_defaults(self, child, left_attach, right_attach, top_attach, bottom_attach) :
+        if not isinstance(child, Widget) :
+            raise TypeError("child must be a Widget")
+        #end if
+        libgtk2.gtk_table_attach_defaults(self._gtkobj, child._gtkobj, left_attach, right_attach, top_attach, bottom_attach)
+    #end attach_defaults
 
     def set_col_spacings(self, spacings) :
         libgtk2.gtk_table_set_col_spacings(self._gtkobj, spacings)

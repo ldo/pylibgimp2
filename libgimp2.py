@@ -15,6 +15,7 @@ import ctypes as ct
 import libgimpgtk2
 from libgimpgtk2 import \
     GTK, \
+    GType, \
     Widget, \
     str_encode, \
     str_encode_optional, \
@@ -141,6 +142,41 @@ class GIMP :
                 ("a", ct.c_double),
             ]
     #end RGB
+
+    class HSV(Structure) :
+        _fields_ = \
+            [
+                ("h", ct.c_double),
+                ("s", ct.c_double),
+                ("v", ct.c_double),
+                ("a", ct.c_double),
+            ]
+    #end HSV
+
+    class HSL(Structure) :
+        _fields_ = \
+            [
+                ("h", ct.c_double),
+                ("s", ct.c_double),
+                ("l", ct.c_double),
+                ("a", ct.c_double),
+            ]
+    #end HSL
+
+    class CMYK(Structure) :
+        _fields_ = \
+            [
+                ("c", ct.c_double),
+                ("m", ct.c_double),
+                ("y", ct.c_double),
+                ("k", ct.c_double),
+                ("a", ct.c_double),
+            ]
+    #end CMYK
+
+    RenderFunc = ct.CFUNCTYPE(None, ct.c_double, ct.c_double, ct.POINTER(RGB), ct.c_void_p)
+    PutPixelFunc = ct.CFUNCTYPE(None, ct.c_int, ct.c_int, ct.POINTER(RGB), ct.c_void_p)
+    ProgressFunc = ct.CFUNCTYPE(None, ct.c_int, ct.c_int, ct.c_int, ct.c_void_p)
 
     # from libgimp/gimp.h:
 
@@ -315,6 +351,32 @@ class GIMP :
     # from libgimpwidgets/gimpwidgetstypes.h:
 
     HelpFunc = ct.CFUNCTYPE(None, ct.c_char_p, ct.c_void_p)
+
+    # from libgimpwidgets/gimpwidgetsenums.h:
+
+    ColourSelectorChannel = ct.c_uint
+    # values for ColourSelectorChannel:
+    COLOUR_SELECTOR_HUE = 0
+    COLOUR_SELECTOR_SATURATION = 1
+    COLOUR_SELECTOR_VALUE = 2
+    COLOUR_SELECTOR_RED = 3
+    COLOUR_SELECTOR_GREEN = 4
+    COLOUR_SELECTOR_BLUE = 5
+    COLOUR_SELECTOR_ALPHA = 6
+    COLOUR_SELECTOR_LCH_LIGHTNESS = 7
+    COLOUR_SELECTOR_LCH_CHROMA = 8
+    COLOUR_SELECTOR_LCH_HUE = 9
+
+    ColourSelectorModel = ct.c_uint
+    # values for ColourSelectorModel:
+    COLOUR_SELECTOR_MODEL_RGB = 0
+    COLOUR_SELECTOR_MODEL_LCH = 1
+    COLOUR_SELECTOR_MODEL_HSV = 2
+
+    # from libgimpwidgets/gimpcolorselector.h:
+
+    COLOUR_SELECTOR_SIZE = 150
+    COLOUR_SELECTOR_BAR_SIZE = 15
 
     # from libgimpwidgets/gimpdialog.h:
 
@@ -812,6 +874,42 @@ libgimpui2.gimp_spin_button_new_.argtypes = (ct.c_void_p, ct.c_double, ct.c_uint
 libgimpui2.gimp_spin_button_new_.restype = ct.c_void_p
 libgimpui2.gimp_spin_button_new_with_range.argtypes = (ct.c_double, ct.c_double, ct.c_double)
 libgimpui2.gimp_spin_button_new_with_range.restype = ct.c_void_p
+
+# from libgimpwidgets/gimpcolorselector.h:
+
+libgimpui2.gimp_color_selector_new.argtypes = (GType, ct.POINTER(GIMP.RGB), ct.POINTER(GIMP.HSV), GIMP.ColourSelectorChannel)
+libgimpui2.gimp_color_selector_new.restype = ct.c_void_p
+libgimpui2.gimp_color_selector_set_toggles_visible.argtypes = (ct.c_void_p, ct.c_bool)
+libgimpui2.gimp_color_selector_set_toggles_visible.restype = None
+libgimpui2.gimp_color_selector_get_toggles_visible.argtypes = (ct.c_void_p,)
+libgimpui2.gimp_color_selector_get_toggles_visible.restype = ct.c_bool
+libgimpui2.gimp_color_selector_set_toggles_sensitive.argtypes = (ct.c_void_p, ct.c_bool)
+libgimpui2.gimp_color_selector_set_toggles_sensitive.restype = None
+libgimpui2.gimp_color_selector_get_toggles_sensitive.argtypes = (ct.c_void_p,)
+libgimpui2.gimp_color_selector_get_toggles_sensitive.restype = ct.c_bool
+libgimpui2.gimp_color_selector_set_show_alpha.argtypes = (ct.c_void_p, ct.c_bool)
+libgimpui2.gimp_color_selector_set_show_alpha.restype = None
+libgimpui2.gimp_color_selector_get_show_alpha.argtypes = (ct.c_void_p,)
+libgimpui2.gimp_color_selector_get_show_alpha.restype = ct.c_bool
+libgimpui2.gimp_color_selector_set_color.argtypes = (ct.c_void_p, ct.POINTER(GIMP.RGB), ct.POINTER(GIMP.HSV))
+libgimpui2.gimp_color_selector_set_color.restype = None
+libgimpui2.gimp_color_selector_get_color.argtypes = (ct.c_void_p, ct.POINTER(GIMP.RGB), ct.POINTER(GIMP.HSV))
+libgimpui2.gimp_color_selector_get_color.restype = None
+libgimpui2.gimp_color_selector_set_channel.argtypes = (ct.c_void_p, GIMP.ColourSelectorChannel)
+libgimpui2.gimp_color_selector_set_channel.restype = None
+libgimpui2.gimp_color_selector_get_channel.argtypes = (ct.c_void_p,)
+libgimpui2.gimp_color_selector_get_channel.restype = GIMP.ColourSelectorChannel
+libgimpui2.gimp_color_selector_set_model_visible.argtypes = (ct.c_void_p, GIMP.ColourSelectorModel, ct.c_bool)
+libgimpui2.gimp_color_selector_set_model_visible.restype = None
+libgimpui2.gimp_color_selector_get_model_visible.argtypes = (ct.c_void_p, GIMP.ColourSelectorModel)
+libgimpui2.gimp_color_selector_set_model_visible.restype = ct.c_bool
+libgimpui2.gimp_color_selector_color_changed.argtypes = (ct.c_void_p,)
+libgimpui2.gimp_color_selector_color_changed.restype = None
+libgimpui2.gimp_color_selector_channel_changed.argtypes = (ct.c_void_p,)
+libgimpui2.gimp_color_selector_channel_changed.restype = None
+libgimpui2.gimp_color_selector_model_visible_changed.argtypes = (ct.c_void_p, GIMP.ColourSelectorModel)
+libgimpui2.gimp_color_selector_model_visible_changed.restype = None
+# todo gimp_color_selector_set_config
 
 # from libgimpwidgets/gimpdialog.h:
 
