@@ -699,7 +699,7 @@ class UI_PLACEMENT(enum.Enum) :
     @property
     def nr_required_params(self) :
         return \
-            len(self.value[1])
+            len(self.value[1]) + 1
     #end nr_required_params
 
     @property
@@ -1658,19 +1658,20 @@ def run_dispatched(name, params) :
 
 #begin run_dispatched
     run_mode = params[0]
-    entry["params"].load_data()
     confirm = True # to begin with
     if run_mode == GIMP.RUN_INTERACTIVE :
+        entry["params"].load_data()
         if entry["do_ui"] :
             confirm = do_settings()
         #end if
     elif run_mode == GIMP.RUN_NONINTERACTIVE :
-        for i, param in enumerate(entry["params"][entry["placement"].nr_required_params:]) :
-            entry["params"][entry["params"].ct_struct._fields_[i][0]] = param
+        base = entry["placement"].nr_required_params
+        for i in range(len(params) - base) :
+            entry["params"][entry["params"].ct_struct._fields_[i][0]] = params[i + base]
         #end for
     #end if
     if confirm :
-        args = params[1:entry["placement"].nr_required_params + 1]
+        args = params[1:entry["placement"].nr_required_params]
           # omit run_mode
         kwargs = entry["params"].get_current()
         return_vals = entry["action"](*args, **kwargs)
