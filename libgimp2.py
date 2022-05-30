@@ -1,7 +1,7 @@
 """
-This module is a wrapper around the Gimp plug-in APIs (libgimp-2.0 etc),
+This module is a wrapper around the GIMP plug-in APIs (libgimp-2.0 etc),
 implemented in pure Python using ctypes. It does not depend on any
-Python support built into Gimp itself.
+Python support built into GIMP itself.
 """
 #+
 # Copyright 2022 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
@@ -1125,7 +1125,7 @@ def displays_flush() :
 
 class Params :
     "convenience wrapper for holding param definitions and values in Python" \
-    " format with easy conversion to/from the format Gimp expects."
+    " format with easy conversion to/from the format GIMP expects."
 
     __slots__ = ("name", "defs", "ct_struct", "_struct_fields", "default_vals", "cur_vals")
 
@@ -1176,7 +1176,7 @@ class Params :
 
     def field_addr(self, fieldname) :
         "returns the address of the specified field within cur_vals, for use" \
-        " with Gimp adjustment callbacks that write directly into struct fields."
+        " with GIMP adjustment callbacks that write directly into struct fields."
         return \
             (
                 ct.addressof(self.cur_vals)
@@ -1186,7 +1186,7 @@ class Params :
     #end field_addr
 
     def save_data(self) :
-        "tells Gimp to save the cur_vals as the plug-in’s last-used settings."
+        "tells GIMP to save the cur_vals as the plug-in’s last-used settings."
         libgimp2.gimp_procedural_db_set_data \
             (str_encode(self.name), ct.byref(self.cur_vals), ct.sizeof(self.cur_vals))
     #end save_data
@@ -1393,7 +1393,7 @@ class Frame(Widget) :
 #end Frame
 
 class Dialog(Widget) :
-    "high-level wrapper for a Gimp dialog. Do not instantiate directly; use the" \
+    "high-level wrapper for a GIMP dialog. Do not instantiate directly; use the" \
     " create method."
 
     __slots__ = ()
@@ -1498,7 +1498,7 @@ class Dialog(Widget) :
 # to be registered with register_dispatched and invoked by
 # run_dispatched (below). plugin_install should be invoked for all
 # your plugin actions in your script mainline, outside any of the
-# actual Gimp callbacks. This is because plugin registration and
+# actual GIMP callbacks. This is because plugin registration and
 # invocation will be done in separate process instances, so we need to
 # ensure the dispatch table is always correctly built, for both
 # registration and invocation purposes.
@@ -1561,7 +1561,7 @@ def plugin_install(name, blurb, help, author, copyright, date, image_types, plac
 
 def register_dispatched() :
     "convenience query_proc which automatically registers all entries in" \
-    " managed_procedures with Gimp."
+    " managed_procedures with GIMP."
     for name, entry in installed_procedures.items() :
         install_procedure \
           (

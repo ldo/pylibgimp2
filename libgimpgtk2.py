@@ -1,6 +1,6 @@
 """
 This module provides a wrapper around the minimum of GLib/GTK 2
-functionality to enable implementing a basic UI for plug-ins for Gimp 2.
+functionality to enable implementing a basic UI for plug-ins for GIMP 2.
 """
 #+
 # Copyright 2022 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
@@ -202,7 +202,7 @@ libgtk2.gtk_dialog_get_content_area.restype = ct.c_void_p
 #-
 
 class Widget :
-    "base wrapper for various Gimp-specific GTK widget classes. Do not" \
+    "base wrapper for various GIMP-specific GTK widget classes. Do not" \
     " instantiate this or any of its subclasses directly; use the various" \
     " create methods as appropriate."
 
