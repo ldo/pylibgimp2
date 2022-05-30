@@ -1127,7 +1127,7 @@ class Params :
     "convenience wrapper for holding param definitions and values in Python" \
     " format with easy conversion to/from the format GIMP expects."
 
-    __slots__ = ("name", "defs", "ct_struct", "_struct_fields", "default_vals", "cur_vals")
+    __slots__ = ("name", "defs", "ct_struct", "_struct_fields", "cur_vals")
 
     def __init__(self, name, defs) :
 
@@ -1164,14 +1164,8 @@ class Params :
             self._struct_fields[e["name"]]["type"] = e["type"]
         #end for
         self.ct_struct = ct_struct
-        default_vals = ct_struct()
-        for e in defs :
-            if "default" in e :
-                setattr(default_vals, e["name"], e["type"].to_ct_conv(e["default"]))
-            #end if
-        #end for
-        self.default_vals = default_vals
-        self.cur_vals = ct_struct.from_buffer_copy(default_vals)
+        self.cur_vals = ct_struct()
+        self.reset_default()
     #end __init__
 
     def field_addr(self, fieldname) :
@@ -1199,7 +1193,11 @@ class Params :
 
     def reset_default(self) :
         "resets cur_vals to the defaults."
-        ct.memmove(ct.byref(self.cur_vals), ct.byref(self.default_vals), ct.sizeof(self.ct_struct))
+        for e in self.defs :
+            if "default" in e :
+                setattr(self.cur_vals, e["name"], e["type"].to_ct_conv(e["default"]))
+            #end if
+        #end for
     #end reset_default
 
     def get_current(self) :
