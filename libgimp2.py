@@ -1492,84 +1492,77 @@ class Dialog(Widget) :
 #end Dialog
 
 #+
-# Mainline
+# Procedure Registration
+#
+# This provides easy management of one or more plugin action callbacks
+# to be registered with register_dispatched and invoked by
+# run_dispatched (below). plugin_install should be invoked for all
+# your plugin actions in your script mainline, outside any of the
+# actual Gimp callbacks. This is because plugin registration and
+# invocation will be done in separate process instances, so we need to
+# ensure the dispatch table is always correctly built, for both
+# registration and invocation purposes.
 #-
 
-class ManagedProcedures :
-    "easy management of one or more plugin action callbacks to be registered" \
-    " with register_dispatched and invoked by run_dispatched. The plugin_install" \
-    " method should be invoked for all your plugin actions in your script mainline," \
-    " outside any of the actual Gimp callbacks. This is because plugin registration" \
-    " and invocation will be done in separate process instances, so we need to" \
-    " ensure the dispatch table is always correctly built, for both registration" \
-    " and invocation purposes."
+installed_procedures = {}
 
-    __slots__ = ("installed",)
-
-    def __init__(self) :
-        self.installed = {}
-    #end __init__
-
-    def plugin_install(self, name, blurb, help, author, copyright, date, image_types, placement, action, params, return_vals, menu_name, item_label) :
-        "registers a plugin action to be dispatched under the given name," \
-        " and optionally attached to the given menu item. The params omit the" \
-        " initial mandatory ones, which are determined from the placement. The" \
-        " type is always GIMP.PLUGIN for now."
-        if name in self.installed :
-            raise RuntimeError("duplicate installation of “%s”" % name)
+def plugin_install(name, blurb, help, author, copyright, date, image_types, placement, action, params, return_vals, menu_name, item_label) :
+    "registers a plugin action to be dispatched under the given name," \
+    " and optionally attached to the given menu item. The params omit the" \
+    " initial mandatory ones, which are determined from the placement. The" \
+    " type is always GIMP.PLUGIN for now."
+    if name in installed_procedures :
+        raise RuntimeError("duplicate installation of “%s”" % name)
+    #end if
+    if not isinstance(placement, UI_PLACEMENT) :
+        raise TypeError("placement must be a UI_PLACEMENT")
+    #end if
+    if params == None :
+        params = []
+    #end if
+    do_ui = len(params) != 0
+    if do_ui :
+        if (
+            not all
+              (
+                    p["type"] in (PARAMTYPE.FLOAT,)
+                or
+                    not all(k in p for k in ("lower", "upper"))
+                for p in params
+              )
+        ) :
+            raise ValueError("auto UI can only handle FLOAT params for now")
         #end if
-        if not isinstance(placement, UI_PLACEMENT) :
-            raise TypeError("placement must be a UI_PLACEMENT")
-        #end if
-        if params == None :
-            params = []
-        #end if
-        do_ui = len(params) != 0
-        if do_ui :
-            if (
-                not all
-                  (
-                        p["type"] in (PARAMTYPE.FLOAT,)
-                    or
-                        not all(k in p for k in ("lower", "upper"))
-                    for p in params
-                  )
-            ) :
-                raise ValueError("auto UI can only handle FLOAT params for now")
-            #end if
-        #end if
-        self.installed[name] = \
-            {
-                "placement" : placement,
-                "type" : GIMP.PLUGIN,
-                "action" : action,
-                "params" : Params(name, params),
-                "return_vals" : return_vals,
-                "image_types" : image_types,
+    #end if
+    installed_procedures[name] = \
+        {
+            "placement" : placement,
+            "type" : GIMP.PLUGIN,
+            "action" : action,
+            "params" : Params(name, params),
+            "return_vals" : return_vals,
+            "image_types" : image_types,
 
-                "do_ui" : do_ui,
-                "menu_name" : menu_name,
-                "item_label" : item_label,
+            "do_ui" : do_ui,
+            "menu_name" : menu_name,
+            "item_label" : item_label,
 
-                "blurb" : blurb,
-                "help" : help,
-                "author" : author,
-                "copyright" : copyright,
-                "date" : date,
-            }
-    #end plugin_install
+            "blurb" : blurb,
+            "help" : help,
+            "author" : author,
+            "copyright" : copyright,
+            "date" : date,
+        }
+#end plugin_install
 
-#end ManagedProcedures
-
-managed_procedures = ManagedProcedures()
-  # There can be ...
-del ManagedProcedures
-  # ... only one
+#+
+# Mainline
+#-
 
 def register_dispatched() :
     "convenience query_proc which automatically registers all entries in" \
     " managed_procedures with Gimp."
-    for name, entry in managed_procedures.installed.items() :
+    for name, entry in installed_procedures.items() :
         install_procedure \
           (
             name = name,
@@ -1598,7 +1591,7 @@ def run_dispatched(name, params) :
     " for your parameters as appropriate, before invoking your actual installed" \
     " action to perform the operation on the image."
 
-    entry = managed_procedures.installed[name]
+    entry = installed_procedures[name]
 
     def do_settings() :
         ui_init(False)
@@ -1712,7 +1705,7 @@ def main(*, init_proc = None, quit_proc = None, query_proc = None, run_proc = No
         c_quit_proc = GIMP.NO_QUIT_PROC
     #end if
     if query_proc == None and run_proc == None :
-        if len(managed_procedures.installed) != 0 :
+        if len(installed_procedures) != 0 :
             c_query_proc = GIMP.QueryProc(register_dispatched)
             c_run_proc = wrap_run_proc(run_dispatched)
         else :
