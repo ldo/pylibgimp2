@@ -1123,6 +1123,12 @@ def displays_flush() :
     libgimp2.gimp_displays_flush()
 #end displays_flush
 
+class ENTRYSTYLE(enum.Enum) :
+    "preferred style of entry UI for each parameter."
+    SLIDER = "slider"
+    SPINBUTTON = "spinner"
+#end ENTRYSTYLE
+
 class Params :
     "convenience wrapper for holding param definitions and values in Python" \
     " format with easy conversion to/from the format GIMP expects."
@@ -1145,14 +1151,20 @@ class Params :
                 not all(k in e for k in ("type", "name", "description") for e in defs)
             or
                 not all(isinstance(e["type"], PARAMTYPE) for e in defs)
+            or
+                not all("entry_style" not in e or isinstance(e["entry_style"], ENTRYSTYLE) for e in defs)
         ) :
             raise TypeError \
               (
-                "defs must be sequence of dicts, each with"
-                " type, name and description keys"
+                "defs must be sequence of dicts, each with type, name and description keys"
               )
         #end if
         self.defs = list(defs)
+        for e in self.defs :
+            if "entry_style" not in e :
+                e["entry_style"] = ENTRYSTYLE.SLIDER # default
+            #end if
+        #end for
         ct_struct.__name__ = "%s_params" % name
         ct_struct._fields_ = list((e["name"], e["type"].ct_type) for e in defs)
         self._struct_fields = dict \
@@ -1368,6 +1380,13 @@ class Box(libgimpgtk2.Container) :
         #end if
         libgimpgtk2.libgtk2.gtk_box_pack_start(self._gtkobj, child._gtkobj, expand, fill, padding)
     #end pack_start
+
+    def pack_end(self, child, expand, fill, padding) :
+        if not isinstance(child, Widget) :
+            raise TypeError("child must be a Widget")
+        #end if
+        libgimpgtk2.libgtk2.gtk_box_pack_end(self._gtkobj, child._gtkobj, expand, fill, padding)
+    #end pack_end
 
 #end Box
 
@@ -1618,41 +1637,80 @@ def run_dispatched(name, params) :
         main_vbox.set_border_width(12)
         settings.get_content_area().pack_start(main_vbox, expand = True, fill = True, padding = 0)
         main_vbox.show()
-        table = Table.create \
-          (
-            nr_rows = len(entry["params"].defs),
-            nr_cols = 3,
-            homogeneous = False
-          )
-        table.set_col_spacings(6).set_row_spacings(6)
-        main_vbox.pack_start(table, expand = False, fill = False, padding = 0)
-        table.show()
+        nr_sliders = len(list(p for p in entry["params"].defs if p["entry_style"] == ENTRYSTYLE.SLIDER))
+        if nr_sliders != 0 :
+            table = Table.create \
+              (
+                nr_rows = nr_sliders,
+                nr_cols = 3,
+                homogeneous = False
+              )
+            table.set_col_spacings(6).set_row_spacings(6)
+            main_vbox.pack_start(table, expand = False, fill = False, padding = 0)
+            table.show()
+            for i, param in enumerate(entry["params"].defs) :
+                if param["entry_style"] == ENTRYSTYLE.SLIDER :
+                    slider = table.scale_entry_new \
+                      (
+                        column = 0,
+                        row = i,
+                        text = param["description"],
+                        scale_width = 100,
+                        spinbutton_width = 2,
+                        value = entry["params"][param["name"]],
+                        lower = param["lower"],
+                        upper = param["upper"],
+                        step_increment = param.get("step_increment", 1),
+                        page_increment = param.get("page_increment", 10),
+                        digits = 0,
+                        constrain = True,
+                        unconstrained_lower = 0,
+                        unconstrained_upper = 0,
+                        tooltip = None,
+                        help_id = None
+                      )
+                    slider.signal_connect \
+                      (
+                        name = "value-changed",
+                        handler = libgimpui2.gimp_double_adjustment_update,
+                        arg = entry["params"].field_addr(param["name"])
+                      )
+                #end for
+            #end if
+        #end if
+        # spin buttons for the rest, if any
         for i, param in enumerate(entry["params"].defs) :
-            slider = table.scale_entry_new \
-              (
-                column = 0,
-                row = i,
-                text = param["description"],
-                scale_width = 100,
-                spinbutton_width = 2,
-                value = entry["params"][param["name"]],
-                lower = param["lower"],
-                upper = param["upper"],
-                step_increment = param.get("step_increment", 1),
-                page_increment = param.get("page_increment", 10),
-                digits = 0,
-                constrain = True,
-                unconstrained_lower = 0,
-                unconstrained_upper = 0,
-                tooltip = None,
-                help_id = None
-              )
-            slider.signal_connect \
-              (
-                name = "value-changed",
-                handler = libgimpui2.gimp_double_adjustment_update,
-                arg = entry["params"].field_addr(param["name"])
-              )
+            if param["entry_style"] == ENTRYSTYLE.SPINBUTTON :
+                row = Box.create(GTK.ORIENTATION_HORIZONTAL, 12)
+                label = libgimpgtk2.Label.create(param["description"])
+                label.show()
+                row.pack_start(label, expand = True, fill = True, padding = 0)
+                adj = libgimpgtk2.Adjustment.create \
+                  (
+                    value = entry["params"][param["name"]],
+                    lower = param["lower"],
+                    upper = param["upper"],
+                    step_increment = param.get("step_increment", 1),
+                    page_increment = param.get("page_increment", 10),
+                    page_size = param.get("page_increment", 10) # ?
+                  )
+                spinner = libgimpgtk2.SpinButton.create \
+                  (
+                    adjustment = adj,
+                    climb_rate = 10, # ?
+                    digits = 3 # ?
+                  )
+                spinner.show()
+                adj.signal_connect \
+                  (
+                    name = "value-changed",
+                    handler = libgimpui2.gimp_double_adjustment_update,
+                    arg = entry["params"].field_addr(param["name"])
+                  )
+                row.pack_end(spinner, expand = True, fill = True, padding = 0)
+                row.show()
+                main_vbox.pack_start(row, expand = True, fill = True, padding = 0)
+            #end if
         #end for
         settings.show()
         confirm = settings.run_and_close() == GTK.RESPONSE_OK
