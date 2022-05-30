@@ -43,6 +43,12 @@ G_CONNECT_SWAPPED = 1 << 1
 class GTK :
     "useful definitions adapted from files in /usr/include/gtk-2.0/."
 
+    # from gtk-2.0/gtk/gtktypeutils.h:
+
+    CallbackMarshal = ct.CFUNCTYPE(None, ct.c_void_p, ct.c_void_p, ct.c_uint, ct.POINTER(ct.c_void_p))
+    DestroyNotify = ct.CFUNCTYPE(None, ct.c_void_p)
+    SignalFunc = ct.CFUNCTYPE(None)
+
     # from gtk-2.0/gtk/gtkenums.h:
 
     AttachOptions = ct.c_uint
@@ -116,6 +122,11 @@ libgtk2 = ct.cdll.LoadLibrary("libgtk-x11-2.0.so.0")
 libgobject2.g_signal_connect_data.argtypes = (ct.c_void_p, ct.c_char_p, ct.c_void_p, ct.c_void_p, ct.c_void_p, GConnectFlags)
 libgobject2.g_signal_connect_data.restype = ct.c_ulong
 
+# from gtk-2.0/gtk/signal.h:
+
+libgtk2.gtk_signal_connect_full.argtypes = (ct.c_void_p, ct.c_char_p, GCallback, GTK.CallbackMarshal, ct.c_void_p, GTK.DestroyNotify, ct.c_int, ct.c_int)
+libgtk2.gtk_signal_connect_full.restype = ct.c_ulong
+
 # from gtk-2.0/gtk/gtkwidget.h:
 
 libgtk2.gtk_widget_show.argtypes = (ct.c_void_p,)
@@ -156,6 +167,12 @@ libgtk2.gtk_adjustment_configure.restype = None
 
 # from gtk-2.0/gtk/gtkspinbutton.h:
 
+libgtk2.gtk_spin_button_new.argtypes = (ct.c_void_p, ct.c_double, ct.c_uint)
+libgtk2.gtk_spin_button_new.restype = ct.c_void_p
+libgtk2.gtk_spin_button_new_with_range.argtypes = (ct.c_double, ct.c_double, ct.c_double)
+libgtk2.gtk_spin_button_new_with_range.restype = ct.c_void_p
+libgtk2.gtk_spin_button_get_adjustment.argtypes = (ct.c_void_p,)
+libgtk2.gtk_spin_button_get_adjustment.restype = ct.c_void_p
 libgtk2.gtk_spin_button_get_value.argtypes = (ct.c_void_p,)
 libgtk2.gtk_spin_button_get_value.restype = ct.c_double
 
@@ -201,8 +218,8 @@ libgtk2.gtk_dialog_get_content_area.restype = ct.c_void_p
 # Higher-level stuff follows
 #-
 
-class Widget :
-    "base wrapper for various GIMP-specific GTK widget classes. Do not" \
+class Object :
+    "base wrapper for various GIMP-specific GTK object classes. Do not" \
     " instantiate this or any of its subclasses directly; use the various" \
     " create methods as appropriate."
 
@@ -212,19 +229,6 @@ class Widget :
         self._gtkobj = _gtkobj
         self._wrappers = [] # for saving CFUNCTYPE wrappers to ensure they don’t randomly disappear
     #end __init__
-
-    def destroy(self) :
-        if self._gtkobj != None :
-            libgtk2.gtk_widget_destroy(self._gtkobj)
-            self._gtkobj = None
-        #end if
-    #end destroy
-
-    def show(self) :
-        libgtk2.gtk_widget_show(self._gtkobj)
-        return \
-            self
-    #end show
 
     def signal_connect(self, name, handler, arg = None) :
         if isinstance(handler, ct._CFuncPtr) :
@@ -238,6 +242,32 @@ class Widget :
         return \
             self
     #end signal_connect
+
+    def destroy(self) :
+        if self._gtkobj != None :
+            libgtk2.gtk_object_destroy(self._gtkobj)
+            self._gtkobj = None
+        #end if
+    #end destroy
+
+#end Object
+
+class Widget(Object) :
+
+    __slots__ = ()
+
+    def destroy(self) :
+        if self._gtkobj != None :
+            libgtk2.gtk_widget_destroy(self._gtkobj)
+            self._gtkobj = None
+        #end if
+    #end destroy
+
+    def show(self) :
+        libgtk2.gtk_widget_show(self._gtkobj)
+        return \
+            self
+    #end show
 
     def set_tooltip_text(self, text) :
         libgtk2.gtk_widget_set_tooltip_text(self._gtkobj, str_encode(text))
@@ -276,11 +306,53 @@ class Label(Widget) :
 
 #end Label
 
-class Adjustment(Widget) :
+class Adjustment(Object) :
 
     __slots__ = ()
 
+    @classmethod
+    def create(celf, value, lower, upper, step_increment, page_increment, page_size) :
+        return \
+            celf(libgtk2.gtk_adjustment_new(value, lower, upper, step_increment, page_increment, page_size))
+    #end create
+
+    def get_value(self) :
+        return \
+            libgtk2.gtk_adjustment_get_value(self._gtkobj)
+    #end get_value
+
 #end Adjustment
+
+class SpinButton(Widget) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, adjustment, climb_rate, digits) :
+        if not isinstance(adjustment, Adjustment) :
+            raise TypeError("adjustment must be an Adjustment.")
+        #end if
+        return \
+            celf(libgtk2.gtk_spin_button_new(adjustment._gtkobj, climb_rate, digits))
+    #end create
+
+    @classmethod
+    def create_with_range(celf, min, max, step) :
+        return \
+            celf(libgtk2.gtk_spin_button_new_with_range(min, max, step))
+    #end create_with_range
+
+    def get_adjustment(self) :
+        return \
+            Adjustment(libgtk2.gtk_spin_button_get_adjustment(self._gtkobj))
+    #end get_adjustment
+
+    def get_value(self) :
+        return \
+            libgtk2.gtk_spin_button_get_value(self._gtkobj)
+    #end get_value
+
+#end SpinButton
 
 class ScaleEntry(Adjustment) :
 
