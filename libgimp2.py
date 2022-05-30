@@ -1510,7 +1510,13 @@ def plugin_install(name, blurb, help, author, copyright, date, image_types, plac
     "registers a plugin action to be dispatched under the given name," \
     " and optionally attached to the given menu item. The params omit the" \
     " initial mandatory ones, which are determined from the placement. The" \
-    " type is always GIMP.PLUGIN for now."
+    " type is always GIMP.PLUGIN for now.\n" \
+    "\n" \
+    "When the plugin is invoked, the initial mandatory args are passed" \
+    " positionally, so you can give them whatever names you like but the order" \
+    " is fixed, while the plugin-specific ones are passed by keyword. This means" \
+    " their names must match those given in the parameter definitions, but they" \
+    " can be listed in any order."
     if name in installed_procedures :
         raise RuntimeError("duplicate installation of “%s”" % name)
     #end if
