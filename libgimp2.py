@@ -56,12 +56,37 @@ class GIMP :
     CHANNEL_OP_REPLACE = 2
     CHANNEL_OP_INTERSECT = 3
 
+    FillType = ct.c_uint
+    # values for FillType:
+    FILL_FOREGROUND = 0
+    FILL_BACKGROUND = 1
+    FILL_WHITE = 2
+    FILL_TRANSPARENT = 3
+    FILL_PATTERN = 4
+    # deprecated synonyms for above:
+    FOREGROUND_FILL = FILL_FOREGROUND
+    BACKGROUND_FILL = FILL_BACKGROUND
+    WHITE_FILL = FILL_WHITE
+    TRANSPARENT_FILL = FILL_TRANSPARENT
+    PATTERN_FILL = FILL_PATTERN
+
+    ForegroundExtractMode = ct.c_uint
+    # values for ForegroundExtractMode:
+    FOREGROUND_EXTRACT_SIOX = 0
+    FOREGROUND_EXTRACT_MATTING = 1
+
     MergeType = ct.c_uint
     # values for MergeType:
     EXPAND_AS_NECESSARY = 0
     CLIP_TO_IMAGE = 1
     CLIP_TO_BOTTOM_LAYER = 2
     FLATTEN_IMAGE = 3
+
+    OffsetType = ct.c_uint
+    # values for OffsetType:
+    OFFSET_BACKGROUND = 0
+    OFFSET_TRANSPARENT = 1
+    OFFSET_WRAP_AROUND = 2
 
     PDBArgType = ct.c_uint
     # values for PDBArgType:
@@ -742,19 +767,52 @@ libgimp2.gimp_destroy_paramdefs.restype = None
 
 libgimp2.gimp_drawable_flush.argtypes = (ct.c_void_p,)
 libgimp2.gimp_drawable_flush.restype = None
+  # deprecated, use GEGL instead
 
 # from libgimp/gimpdrawable_pdb.h:
 
+libgimp2.gimp_drawable_type.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_type.restype = GIMP.ImageType
+libgimp2.gimp_drawable_type_with_alpha.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_type_with_alpha.restype = GIMP.ImageType
+libgimp2.gimp_drawable_has_alpha.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_has_alpha.restype = ct.c_bool
+libgimp2.gimp_drawable_is_rgb.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_is_rgb.restype = ct.c_bool
+libgimp2.gimp_drawable_is_gray.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_is_gray.restype = ct.c_bool
+libgimp2.gimp_drawable_is_indexed.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_is_indexed.restype = ct.c_bool
+libgimp2.gimp_drawable_bpp.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_bpp.restype = ct.c_int
 libgimp2.gimp_drawable_width.argtypes = (ct.c_int32,)
 libgimp2.gimp_drawable_width.restype = ct.c_int
 libgimp2.gimp_drawable_height.argtypes = (ct.c_int32,)
 libgimp2.gimp_drawable_height.restype = ct.c_int
 libgimp2.gimp_drawable_offsets.argtypes = (ct.c_int32, ct.POINTER(ct.c_int), ct.POINTER(ct.c_int))
 libgimp2.gimp_drawable_offsets.restype = ct.c_bool
+libgimp2.gimp_drawable_set_image.argtypes = (ct.c_int32, ct.c_int32)
+libgimp2.gimp_drawable_set_image.restype = ct.c_bool
+libgimp2.gimp_drawable_mask_bounds.argtypes = (ct.c_int32, ct.POINTER(ct.c_int), ct.POINTER(ct.c_int), ct.POINTER(ct.c_int), ct.POINTER(ct.c_int))
+libgimp2.gimp_drawable_mask_bounds.restype = ct.c_bool
+libgimp2.gimp_drawable_mask_intersect.argtypes = (ct.c_int32, ct.POINTER(ct.c_int), ct.POINTER(ct.c_int), ct.POINTER(ct.c_int), ct.POINTER(ct.c_int))
+libgimp2.gimp_drawable_mask_intersect.restype = ct.c_bool
 libgimp2.gimp_drawable_merge_shadow.argtypes = (ct.c_int32, ct.c_bool)
 libgimp2.gimp_drawable_merge_shadow.restype = ct.c_bool
+libgimp2.gimp_drawable_free_shadow.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_free_shadow.restype = ct.c_bool
 libgimp2.gimp_drawable_update.argtypes = (ct.c_int32, ct.c_int, ct.c_int, ct.c_int, ct.c_int)
 libgimp2.gimp_drawable_update.restype = ct.c_bool
+libgimp2.gimp_drawable_get_pixel.argtypes = (ct.c_int32, ct.c_int, ct.c_int, ct.POINTER(ct.c_int))
+libgimp2.gimp_drawable_get_pixel.restype = ct.c_void_p # ct.POINTER(ct.c_uint8)
+libgimp2.gimp_drawable_set_pixel.argtypes = (ct.c_int32, ct.c_int, ct.c_int, ct.c_int, ct.c_void_p)
+libgimp2.gimp_drawable_set_pixel.restype = ct.c_bool
+libgimp2.gimp_drawable_fill.argtypes = (ct.c_int32, GIMP.FillType)
+libgimp2.gimp_drawable_fill.restype = ct.c_bool
+libgimp2.gimp_drawable_offset.argtypes = (ct.c_int32, ct.c_bool, GIMP.OffsetType, ct.c_int, ct.c_int)
+libgimp2.gimp_drawable_offset.restype = ct.c_bool
+libgimp2.gimp_drawable_foreground_extract.argtypes = (ct.c_uint32, GIMP.ForegroundExtractMode, ct.c_uint32)
+libgimp2.gimp_drawable_foreground_extract.restype = ct.c_bool
 
 # from libgimp/gimpdisplay_pdb.h:
 
@@ -936,6 +994,201 @@ libgimpui2.gtk_scale_new.restype = ct.c_void_p
 
 #+
 # Higher-level stuff follows
+#-
+
+class CallFailed(Exception) :
+    "used internally for reporting general failure from calling a GIMP routine."
+
+    __slots__ = ("funcname",)
+
+    def __init__(self, funcname) :
+        self.args = ("%s failed" % funcname,)
+        self.funcname = funcname
+    #end __init__
+
+#end CallFailed
+
+class ObjID :
+    "base class for convenient wrappers for objects which GIMP identifies" \
+    " just by an integer ID. Instantiate a suitable subclass around such an" \
+    " ID, and you can use it make the relevant wrappe metho calls."
+
+    __slots__ = ("id",)
+
+    def __init__(self, id) :
+        self.id = id
+    #end __init__
+
+#end ObjID
+
+class Image(ObjID) :
+
+    __slots__ = ()
+
+#end Image
+
+class Drawable(ObjID) :
+
+    __slots__ = ()
+
+    @property
+    def has_alpha(self) :
+        return \
+            libgimp2.gimp_drawable_has_alpha(self.id)
+    #end has_alpha
+
+    @property
+    def is_rgb(self) :
+        return \
+            libgimp2.gimp_drawable_is_rgb(self.id)
+    #end is_rgb
+
+    @property
+    def is_grey(self) :
+        return \
+            libgimp2.gimp_drawable_is_gray(self.id)
+    #end is_grey
+    is_gray = is_grey # if you prefer
+
+    @property
+    def is_indexed(self) :
+        return \
+            libgimp2.gimp_drawable_is_indexed(self.id)
+    #end is_indexed
+
+    @property
+    def bpp(self) :
+        return \
+            libgimp2.gimp_drawable_bpp(self.id)
+    #end bpp
+
+    @property
+    def width(self) :
+        return \
+            libgimp2.gimp_drawable_width(self.id)
+    #end width
+
+    @property
+    def height(self) :
+        return \
+            libgimp2.gimp_drawable_height(self.id)
+    #end height
+
+    @property
+    def bpp(self) :
+        x = ct.c_int()
+        y = ct.c_int()
+        if not libgimp2.gimp_drawable_offsets(self.id, ct.byref(x), ct.byref(y)) :
+            raise CallFailed("gimp_drawable_offsets")
+        #end if
+        return \
+            (x.value, y.value)
+    #end bpp
+
+    def set_image(self, image) :
+        if not isinstance(image, Image) :
+            raise TypeError("image must be an Image")
+        #end if
+        if not libgimp2.gimp_drawable_set_image(self.id, image.id) :
+            raise CallFailed("gimp_drawable_set_image")
+        #end if
+    #end set_image
+
+    @property
+    def mask_bounds(self) :
+        "the bounds of the current selection, or None if none."
+        x1 = ct.c_int()
+        y1 = ct.c_int()
+        x2 = ct.c_int()
+        y2 = ct.c_int()
+        if libgimp2.gimp_drawable_mask_bounds(self.id, ct.byref(x1), ct.byref(y1), ct.byref(x2), ct.byref(y2)) :
+            result = (x1.value, y1.value, x2.value, y2.value)
+        else :
+            result = None
+        #end if
+        return \
+            result
+    #end mask_bounds
+
+    @property
+    def mask_intersect(self) :
+        x = ct.c_int()
+        y = ct.c_int()
+        width = ct.c_int()
+        height = ct.c_int()
+        if libgimp2.gimp_drawable_mask_intersect(self.id, ct.byref(x), ct.byref(y), ct.byref(width), ct.byref(height)) :
+            result = (x.value, y.value, width.value, height.value)
+        else :
+            result = None
+        #end if
+        return \
+            result
+    #end mask_intersect
+
+    def merge_shadow(self, undo) :
+        if not libgimp2.gimp_drawable_merge_shadow(self.id, undo) :
+            raise CallFailed("gimp_drawable_merge_shadow")
+        #end if
+    #end merge_shadow
+
+    def free_shadow(self) :
+        if not libgimp2.gimp_drawable_free_shadow(self.id) :
+            raise CallFailed("gimp_drawable_free_shadow")
+        #end if
+    #end free_shadow
+
+    def update(self, x, y, width, height) :
+        if not libgimp2.gimp_drawable_update(self.id, x, y, width, height) :
+            raise CallFailed("gimp_drawable_update")
+        #end if
+    #end update
+
+    def get_pixel(self, x, y) :
+        "Note that returned pixel data was allocated with g_new(), and" \
+        " needs to be freed with libgimpgtk2.g_free()."
+        # Perhaps I should create my own wrapper around
+        # gimp_run_procedure("gimp-drawable-get-pixel" ...),
+        # following example of gimp_drawable_get_pixel routine in
+        # libgimp/gimpdrawable_pdb.c in source code?
+        nr_channels = ct.c_int()
+        pixel = libgimp2.gimp_drawable_get_pixel(self.id, x, y, ct.byref(nr_channels))
+        nr_channels = nr_channels.value
+        if nr_channels == 0 :
+            raise CallFailed("gimp_drawable_get_pixel")
+        #end if
+        return \
+            pixel, nr_channels
+    #end get_pixel
+
+    # TODO: set_pixel
+
+    def fill(self, fill_type) :
+        if not libgimp2.gimp_drawable_fill(self.id, fill_type) :
+            raise CallFailed("gimp_drawable_fill")
+        #end if
+    #end fill
+
+    def offset(self, wrap_around, fill_type, offset_x, offset_y) :
+        if not libgimp2.gimp_drawable_offset(self.id, wrap_around, fill_type, offset_x, offset_y) :
+            raise CallFailed("gimp_drawable_offset")
+        #end if
+    #end offset
+
+    def foreground_extract(self, mode, mask) :
+        if not isinstance(mask, Drawable) :
+            raise TypeError("mask must be a Drawable")
+        #end if
+        if not libgimp2.gimp_drawable_foreground_extract(self.id, mode, mask.id) :
+            raise CallFailed("gimp_drawable_foreground_extract")
+        #end if
+    #end foreground_extract
+
+#end Drawable
+
+#+
+# Interface to Procedural Database. This is where a plugin registers
+# its callbacks, and it can also find and call routines registered
+# by other plugins, as well as by GIMP itself.
 #-
 
 def procedural_db_proc_info(procname : str) :
