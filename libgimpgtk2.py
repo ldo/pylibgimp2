@@ -7,6 +7,8 @@ functionality to enable implementing a basic UI for plug-ins for GIMP 2.
 # Licensed under the GNU Lesser General Public License v2.1 or later.
 #-
 
+# GTK 2 and related docs can be found at <https://developer-old.gnome.org/references>.
+
 import ctypes as ct
 
 str_encode = lambda s : s.encode()
