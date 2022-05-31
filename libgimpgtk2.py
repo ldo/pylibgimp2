@@ -127,6 +127,17 @@ libgobject2.g_signal_connect_data.restype = ct.c_ulong
 libgtk2.gtk_signal_connect_full.argtypes = (ct.c_void_p, ct.c_char_p, GCallback, GTK.CallbackMarshal, ct.c_void_p, GTK.DestroyNotify, ct.c_int, ct.c_int)
 libgtk2.gtk_signal_connect_full.restype = ct.c_ulong
 
+# from gtk-2.0/gtk/gtkmisc.h:
+
+libgtk2.gtk_misc_set_alignment.argtypes = (ct.c_void_p, ct.c_float, ct.c_float)
+libgtk2.gtk_misc_set_alignment.restype = None
+libgtk2.gtk_misc_get_alignment.argtypes = (ct.c_void_p, ct.POINTER(ct.c_float), ct.POINTER(ct.c_float))
+libgtk2.gtk_misc_get_alignment.restype = None
+libgtk2.gtk_misc_set_padding.argtypes = (ct.c_void_p, ct.c_int, ct.c_int)
+libgtk2.gtk_misc_set_padding.restype = None
+libgtk2.gtk_misc_get_padding.argtypes = (ct.c_void_p, ct.POINTER(ct.c_int), ct.POINTER(ct.c_int))
+libgtk2.gtk_misc_get_padding.restype = None
+
 # from gtk-2.0/gtk/gtkwidget.h:
 
 libgtk2.gtk_widget_show.argtypes = (ct.c_void_p,)
@@ -268,6 +279,14 @@ class Widget(Object) :
         return \
             self
     #end show
+
+    def set_alignment(self, xalign, yalign) :
+        libgtk2.gtk_misc_set_alignment(self._gtkobj, xalign, yalign)
+    #end set_alignment
+
+    def set_padding(self, xpad, ypad) :
+        libgtk2.gtk_misc_set_padding(self._gtkobj, xpad, ypad)
+    #end set_padding
 
     def set_tooltip_text(self, text) :
         libgtk2.gtk_widget_set_tooltip_text(self._gtkobj, str_encode(text))
