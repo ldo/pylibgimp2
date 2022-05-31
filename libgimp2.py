@@ -1638,54 +1638,47 @@ def run_dispatched(name, params) :
         main_vbox.set_border_width(12)
         settings.get_content_area().pack_start(main_vbox, expand = True, fill = True, padding = 0)
         main_vbox.show()
-        nr_sliders = len(list(p for p in entry["params"] if p["entry_style"] == ENTRYSTYLE.SLIDER))
-        if nr_sliders != 0 :
-            table = Table.create \
-              (
-                nr_rows = nr_sliders,
-                nr_cols = 3,
-                homogeneous = False
-              )
-            table.set_col_spacings(6).set_row_spacings(6)
-            main_vbox.pack_start(table, expand = False, fill = False, padding = 0)
-            table.show()
-            for i, param in enumerate(entry["params"]) :
-                if param["entry_style"] == ENTRYSTYLE.SLIDER :
-                    slider = table.scale_entry_new \
-                      (
-                        column = 0,
-                        row = i,
-                        text = param["description"],
-                        scale_width = 100,
-                        spinbutton_width = 2,
-                        value = cur_params[param["name"]],
-                        lower = param["lower"],
-                        upper = param["upper"],
-                        step_increment = param.get("step_increment", 1),
-                        page_increment = param.get("page_increment", 10),
-                        digits = 0,
-                        constrain = True,
-                        unconstrained_lower = 0,
-                        unconstrained_upper = 0,
-                        tooltip = None,
-                        help_id = None
-                      )
-                    slider.signal_connect \
-                      (
-                        name = "value-changed",
-                        handler = libgimpui2.gimp_double_adjustment_update,
-                        arg = cur_params.field_addr(param["name"])
-                      )
-                #end for
-            #end if
-        #end if
-        # spin buttons for the rest, if any
+        table = Table.create \
+          (
+            nr_rows = len(entry["params"]),
+            nr_cols = 3,
+            homogeneous = False
+          )
+        table.set_col_spacings(6).set_row_spacings(6)
+        main_vbox.pack_start(table, expand = False, fill = False, padding = 0)
+        table.show()
         for i, param in enumerate(entry["params"]) :
-            if param["entry_style"] == ENTRYSTYLE.SPINBUTTON :
-                row = Box.create(GTK.ORIENTATION_HORIZONTAL, 12)
+            if param["entry_style"] == ENTRYSTYLE.SLIDER :
+                slider = table.scale_entry_new \
+                  (
+                    column = 0,
+                    row = i,
+                    text = param["description"],
+                    scale_width = 100,
+                    spinbutton_width = 2,
+                    value = cur_params[param["name"]],
+                    lower = param["lower"],
+                    upper = param["upper"],
+                    step_increment = param.get("step_increment", 1),
+                    page_increment = param.get("page_increment", 10),
+                    digits = 0,
+                    constrain = True,
+                    unconstrained_lower = 0,
+                    unconstrained_upper = 0,
+                    tooltip = None,
+                    help_id = None
+                  )
+                slider.signal_connect \
+                  (
+                    name = "value-changed",
+                    handler = libgimpui2.gimp_double_adjustment_update,
+                    arg = cur_params.field_addr(param["name"])
+                  )
+            elif param["entry_style"] == ENTRYSTYLE.SPINBUTTON :
                 label = libgimpgtk2.Label.create(param["description"])
+                label.set_alignment(0, 0.5)
                 label.show()
-                row.pack_start(label, expand = True, fill = True, padding = 0)
+                table.attach_defaults(label, 0, 1, i, i + 1)
                 adj = libgimpgtk2.Adjustment.create \
                   (
                     value = cur_params[param["name"]],
@@ -1702,15 +1695,15 @@ def run_dispatched(name, params) :
                     digits = 3 # ?
                   )
                 spinner.show()
+                table.attach_defaults(spinner, 1, 3, i, i + 1)
                 adj.signal_connect \
                   (
                     name = "value-changed",
                     handler = libgimpui2.gimp_double_adjustment_update,
                     arg = cur_params.field_addr(param["name"])
                   )
-                row.pack_end(spinner, expand = True, fill = True, padding = 0)
-                row.show()
-                main_vbox.pack_start(row, expand = True, fill = True, padding = 0)
+            else :
+                raise AssertionError("invalid param entry style -- how did you get here?")
             #end if
         #end for
         settings.show()
