@@ -1562,7 +1562,7 @@ def plugin_install(name, blurb, help, author, copyright, date, image_types, plac
             "placement" : placement,
             "type" : GIMP.PLUGIN,
             "action" : action,
-            "params" : Params(name, params),
+            "params" : params,
             "return_vals" : return_vals,
             "image_types" : image_types,
 
@@ -1599,7 +1599,7 @@ def register_dispatched() :
             params =
                     entry["placement"].required_params
                 +
-                    entry["params"].defs,
+                    entry["params"],
             return_vals = entry["return_vals"],
             item_label = entry["item_label"],
           )
@@ -1615,6 +1615,7 @@ def run_dispatched(name, params) :
     " action to perform the operation on the image."
 
     entry = installed_procedures[name]
+    cur_params = Params(name, entry["params"])
 
     def do_settings() :
         ui_init(False)
@@ -1637,7 +1638,7 @@ def run_dispatched(name, params) :
         main_vbox.set_border_width(12)
         settings.get_content_area().pack_start(main_vbox, expand = True, fill = True, padding = 0)
         main_vbox.show()
-        nr_sliders = len(list(p for p in entry["params"].defs if p["entry_style"] == ENTRYSTYLE.SLIDER))
+        nr_sliders = len(list(p for p in entry["params"] if p["entry_style"] == ENTRYSTYLE.SLIDER))
         if nr_sliders != 0 :
             table = Table.create \
               (
@@ -1648,7 +1649,7 @@ def run_dispatched(name, params) :
             table.set_col_spacings(6).set_row_spacings(6)
             main_vbox.pack_start(table, expand = False, fill = False, padding = 0)
             table.show()
-            for i, param in enumerate(entry["params"].defs) :
+            for i, param in enumerate(entry["params"]) :
                 if param["entry_style"] == ENTRYSTYLE.SLIDER :
                     slider = table.scale_entry_new \
                       (
@@ -1657,7 +1658,7 @@ def run_dispatched(name, params) :
                         text = param["description"],
                         scale_width = 100,
                         spinbutton_width = 2,
-                        value = entry["params"][param["name"]],
+                        value = cur_params[param["name"]],
                         lower = param["lower"],
                         upper = param["upper"],
                         step_increment = param.get("step_increment", 1),
@@ -1673,13 +1674,13 @@ def run_dispatched(name, params) :
                       (
                         name = "value-changed",
                         handler = libgimpui2.gimp_double_adjustment_update,
-                        arg = entry["params"].field_addr(param["name"])
+                        arg = cur_params.field_addr(param["name"])
                       )
                 #end for
             #end if
         #end if
         # spin buttons for the rest, if any
-        for i, param in enumerate(entry["params"].defs) :
+        for i, param in enumerate(entry["params"]) :
             if param["entry_style"] == ENTRYSTYLE.SPINBUTTON :
                 row = Box.create(GTK.ORIENTATION_HORIZONTAL, 12)
                 label = libgimpgtk2.Label.create(param["description"])
@@ -1687,7 +1688,7 @@ def run_dispatched(name, params) :
                 row.pack_start(label, expand = True, fill = True, padding = 0)
                 adj = libgimpgtk2.Adjustment.create \
                   (
-                    value = entry["params"][param["name"]],
+                    value = cur_params[param["name"]],
                     lower = param["lower"],
                     upper = param["upper"],
                     step_increment = param.get("step_increment", 1),
@@ -1705,7 +1706,7 @@ def run_dispatched(name, params) :
                   (
                     name = "value-changed",
                     handler = libgimpui2.gimp_double_adjustment_update,
-                    arg = entry["params"].field_addr(param["name"])
+                    arg = cur_params.field_addr(param["name"])
                   )
                 row.pack_end(spinner, expand = True, fill = True, padding = 0)
                 row.show()
@@ -1722,20 +1723,20 @@ def run_dispatched(name, params) :
     run_mode = params[0]
     confirm = True # to begin with
     if run_mode == GIMP.RUN_INTERACTIVE :
-        entry["params"].load_data()
+        cur_params.load_data()
         if entry["do_ui"] :
             confirm = do_settings()
         #end if
     elif run_mode == GIMP.RUN_NONINTERACTIVE :
         base = entry["placement"].nr_required_params
         for i in range(len(params) - base) :
-            entry["params"][entry["params"].ct_struct._fields_[i][0]] = params[i + base]
+            cur_params[cur_params.ct_struct._fields_[i][0]] = params[i + base]
         #end for
     #end if
     if confirm :
         args = params[1:entry["placement"].nr_required_params]
           # omit run_mode
-        kwargs = entry["params"].get_current()
+        kwargs = cur_params.get_current()
         return_vals = entry["action"](*args, **kwargs)
         if return_vals == None :
             return_vals = [(PARAMTYPE.STATUS, GIMP.PDB_SUCCESS)]
@@ -1745,7 +1746,7 @@ def run_dispatched(name, params) :
         #end if
         if run_mode == GIMP.RUN_INTERACTIVE :
             if entry["do_ui"] :
-                entry["params"].save_data()
+                cur_params.save_data()
             #end if
         #end if
     else :
