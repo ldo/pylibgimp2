@@ -1162,7 +1162,7 @@ class Params :
         self.defs = list(defs)
         for e in self.defs :
             if "entry_style" not in e :
-                e["entry_style"] = ENTRYSTYLE.SLIDER # default
+                e["entry_style"] = ENTRYSTYLE.SPINBUTTON # default
             #end if
         #end for
         ct_struct.__name__ = "%s_params" % name
