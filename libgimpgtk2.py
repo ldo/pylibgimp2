@@ -130,7 +130,7 @@ libglib2.g_free.restype = None
 def g_new(c_type, nr_elts) :
     "approximate equivalent to g_new() macro in glib-2.0/glib/gmem.h."
     return \
-        libglib2.g_malloc(ct.sizeof(c_type) * nr_elts)
+        libglib2.g_malloc(ct.sizeof(c_type * nr_elts))
 #end g_new
 
 # from glib-2.0/gobject/gsignal.h:
