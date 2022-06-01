@@ -765,8 +765,12 @@ libgimp2.gimp_destroy_paramdefs.restype = None
 
 # from libgimp/gimpdrawable.h:
 
-libgimp2.gimp_drawable_flush.argtypes = (ct.c_void_p,)
-libgimp2.gimp_drawable_flush.restype = None
+libgimp2.gimp_drawable_get_buffer.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_get_buffer.restype = ct.c_void_p
+libgimp2.gimp_drawable_get_shadow_buffer.argtypes = (ct.c_int32,)
+libgimp2.gimp_drawable_get_shadow_buffer.restype = ct.c_void_p
+#libgimp2.gimp_drawable_flush.argtypes = (ct.c_void_p,)
+#libgimp2.gimp_drawable_flush.restype = None
   # deprecated, use GEGL instead
 
 # from libgimp/gimpdrawable_pdb.h:
