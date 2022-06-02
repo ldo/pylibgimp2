@@ -1315,6 +1315,21 @@ class LayerMask(ObjID) :
 
 #end LayerMask
 
+def def_expect_id_type(id_type) :
+
+    def get_id(obj) :
+        if not isinstance(obj, id_type) :
+            raise TypeError("arg must be of type %s" % id_type.__name__)
+        #end if
+        return \
+            obj.id
+    #end get_id
+
+#begin def_expect_id_type
+    get_id.__name__ = "get_id_%s" % id_type.__name__
+    return get_id
+#end def_expect_id_type
+
 class PARAMTYPE(enum.Enum) :
 
     # (argtype, ct_type, ParamData fieldname, to_ct_conv, from_ct_conv)
@@ -1332,12 +1347,12 @@ class PARAMTYPE(enum.Enum) :
     COLOURARRAY = (GIMP.PDB_COLOURARRAY, ct.c_void_p, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident)
     COLOUR = (GIMP.PDB_COLOUR, GIMP.RGB, "d_colour", def_expect_type(GIMP.RGB), ident)
     DISPLAY = (GIMP.PDB_DISPLAY, ct.c_int32, "d_display", def_to_ct_int(32, True), ident)
-    IMAGE = (GIMP.PDB_IMAGE, ct.c_int32, "d_image", def_to_ct_int(32, True), Image)
+    IMAGE = (GIMP.PDB_IMAGE, ct.c_int32, "d_image", def_expect_id_type(Image), Image)
     ITEM = (GIMP.PDB_ITEM, ct.c_int32, "d_item", def_to_ct_int(32, True), ident)
-    LAYER = (GIMP.PDB_LAYER, ct.c_int32, "d_layer", def_to_ct_int(32, True), ident)
+    LAYER = (GIMP.PDB_LAYER, ct.c_int32, "d_layer", def_expect_id_type(Layer), Layer)
     # no enum for layer_mask?
     CHANNEL = (GIMP.PDB_CHANNEL, ct.c_int32, "d_channel", def_to_ct_int(32, True), ident)
-    DRAWABLE = (GIMP.PDB_DRAWABLE, ct.c_int32, "d_drawable", def_to_ct_int(32, True), Drawable)
+    DRAWABLE = (GIMP.PDB_DRAWABLE, ct.c_int32, "d_drawable", def_expect_id_type(Drawable), Drawable)
     SELECTION = (GIMP.PDB_SELECTION, ct.c_int32, "d_selection", def_to_ct_int(32, True), ident)
     VECTORS = (GIMP.PDB_VECTORS, ct.c_int32, "d_vectors", def_to_ct_int(32, True), ident)
     # no enum for d_unit?
