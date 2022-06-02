@@ -56,6 +56,24 @@ class GIMP :
 
     # from libgimpbase/gimpbaseenums.h:
 
+    AddMaskType = ct.c_uint
+    # values for AddMaskType:
+    ADD_MASK_WHITE = 0
+    ADD_MASK_BLACK = 1
+    ADD_MASK_ALPHA = 2
+    ADD_MASK_ALPHA_TRANSFER = 3
+    ADD_MASK_SELECTION = 4
+    ADD_MASK_COPY = 5
+    ADD_MASK_CHANNEL = 6
+    # deprecated:
+    ADD_WHITE_MASK = ADD_MASK_WHITE
+    ADD_BLACK_MASK = ADD_MASK_BLACK
+    ADD_ALPHA_MASK = ADD_MASK_ALPHA
+    ADD_ALPHA_TRANSFER_MASK = ADD_MASK_ALPHA_TRANSFER
+    ADD_SELECTION_MASK = ADD_MASK_SELECTION
+    ADD_COPY_MASK = ADD_MASK_COPY
+    ADD_CHANNEL_MASK = ADD_MASK_CHANNEL
+
     ChannelOps = ct.c_uint
     # values for ChannelOps:
     CHANNEL_OP_ADD = 0
@@ -81,6 +99,11 @@ class GIMP :
     # values for ForegroundExtractMode:
     FOREGROUND_EXTRACT_SIOX = 0
     FOREGROUND_EXTRACT_MATTING = 1
+
+    MaskApplyMode = ct.c_uint
+    # values for MaskApplyMode:
+    MASK_APPLY = 0
+    MASK_DISCARD = 1
 
     MergeType = ct.c_uint
     # values for MergeType:
@@ -314,6 +337,20 @@ class GIMP :
     HISTOGRAM_BLUE = 3
     HISTOGRAM_ALPHA = 4
     HISTOGRAM_LUMINANCE = 5
+
+    LayerColourSpace = ct.c_uint
+    # values for LayerColourSpace:
+    LAYER_COLOUR_SPACE_AUTO = 0
+    LAYER_COLOUR_SPACE_RGB_LINEAR = 1
+    LAYER_COLOUR_SPACE_RGB_PERCEPTUAL = 2
+
+    LayerCompositeMode = ct.c_uint
+    # values for LayerCompositeMode:
+    LAYER_COMPOSITE_AUTO = 0
+    LAYER_COMPOSITE_UNION = 1
+    LAYER_COMPOSITE_CLIP_TO_BACKDROP = 2
+    LAYER_COMPOSITE_CLIP_TO_LAYER = 3
+    LAYER_COMPOSITE_INTERSECTION = 4
 
     LayerMode = ct.c_uint
     # values for LayerMode:
@@ -861,6 +898,8 @@ libgimp2.gimp_rect_select.restype = ct.c_bool
 
 libgimp2.gimp_layer_new.argtypes = (ct.c_int32, ct.c_char_p, ct.c_int, ct.c_int, GIMP.ImageType, ct.c_double, GIMP.LayerMode)
 libgimp2.gimp_layer_new.restype = ct.c_int32
+libgimp2.gimp_layer_new_from_surface.argtypes = (ct.c_int32, ct.c_char_p, ct.c_void_p, ct.c_double, ct.c_double)
+libgimp2.gimp_layer_new_from_surface.restype = ct.c_int32
 libgimp2.gimp_layer_copy.restypes = (ct.c_int32,)
 libgimp2.gimp_layer_copy.restype = ct.c_int32
 
@@ -880,10 +919,74 @@ libgimp2.gimp_image_get_active_layer.restype = ct.c_int32
 
 # from libgimp/gimplayer_pdb.h:
 
+libgimp2.gimp_layer_new_from_visible.argtypes = (ct.c_int32, ct.c_int32, ct.c_char_p)
+libgimp2.gimp_layer_new_from_visible.restype = ct.c_int32
+libgimp2.gimp_layer_new_from_drawable.argtypes = (ct.c_int32, ct.c_int32)
+libgimp2.gimp_layer_new_from_drawable.restype = ct.c_int32
+libgimp2.gimp_layer_group_new.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_group_new.restype = ct.c_int32
+libgimp2.gimp_layer_add_alpha.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_add_alpha.restype = ct.c_bool
+libgimp2.gimp_layer_flatten.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_flatten.restype = ct.c_bool
+libgimp2.gimp_layer_scale.argtypes = (ct.c_int32, ct.c_int, ct.c_int, ct.c_bool)
+libgimp2.gimp_layer_scale.restype = ct.c_bool
+# gimp_layer_scale_full deprecated
+libgimp2.gimp_layer_resize.argtypes = (ct.c_int32, ct.c_int, ct.c_int, ct.c_int, ct.c_int)
+libgimp2.gimp_layer_resize.restype = ct.c_bool
+libgimp2.gimp_layer_resize_to_image_size.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_resize_to_image_size.restype = ct.c_bool
+# gimp_layer_translate deprecated
+libgimp2.gimp_layer_set_offsets.argtypes = (ct.c_int32, ct.c_int, ct.c_int)
+libgimp2.gimp_layer_set_offsets.restype = ct.c_bool
+libgimp2.gimp_layer_create_mask.argtypes = (ct.c_int32, ct.c_int, GIMP.AddMaskType)
+libgimp2.gimp_layer_create_mask.restype = ct.c_bool
+libgimp2.gimp_layer_get_mask.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_mask.restype = ct.c_int32
+libgimp2.gimp_layer_from_mask.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_from_mask.restype = ct.c_int32
+libgimp2.gimp_layer_add_mask.argtypes = (ct.c_int32, ct.c_int32)
+libgimp2.gimp_layer_add_mask.restype = ct.c_bool
+libgimp2.gimp_layer_remove_mask.argtypes = (ct.c_int32, GIMP.MaskApplyMode)
+libgimp2.gimp_layer_remove_mask.restype = ct.c_bool
+libgimp2.gimp_layer_is_floating_sel.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_is_floating_sel.restype = ct.c_bool
+libgimp2.gimp_layer_get_lock_alpha.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_lock_alpha.restype = ct.c_bool
+libgimp2.gimp_layer_set_lock_alpha.argtypes = (ct.c_int32, ct.c_bool)
+libgimp2.gimp_layer_set_lock_alpha.restype = ct.c_bool
+libgimp2.gimp_layer_get_apply_mask.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_apply_mask.restype = ct.c_bool
+libgimp2.gimp_layer_set_apply_mask.argtypes = (ct.c_int32, ct.c_bool)
+libgimp2.gimp_layer_set_apply_mask.restype = ct.c_bool
+libgimp2.gimp_layer_get_show_mask.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_show_mask.restype = ct.c_bool
+libgimp2.gimp_layer_set_show_mask.argtypes = (ct.c_int32, ct.c_bool)
+libgimp2.gimp_layer_set_show_mask.restype = ct.c_bool
+libgimp2.gimp_layer_get_edit_mask.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_edit_mask.restype = ct.c_bool
+libgimp2.gimp_layer_set_edit_mask.argtypes = (ct.c_int32, ct.c_bool)
+libgimp2.gimp_layer_set_edit_mask.restype = ct.c_bool
+libgimp2.gimp_layer_get_opacity.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_opacity.restype = ct.c_double
 libgimp2.gimp_layer_set_opacity.argtypes = (ct.c_int32, ct.c_double)
 libgimp2.gimp_layer_set_opacity.restype = ct.c_bool
+libgimp2.gimp_layer_get_mode.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_mode.restype = GIMP.LayerMode
 libgimp2.gimp_layer_set_mode.argtypes = (ct.c_int32, GIMP.LayerMode)
 libgimp2.gimp_layer_set_mode.restype = ct.c_bool
+libgimp2.gimp_layer_get_blend_space.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_blend_space.restype = GIMP.LayerColourSpace
+libgimp2.gimp_layer_set_blend_space.argtypes = (ct.c_int32, GIMP.LayerColourSpace)
+libgimp2.gimp_layer_set_blend_space.restype = ct.c_bool
+libgimp2.gimp_layer_get_composite_space.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_composite_space.restype = GIMP.LayerColourSpace
+libgimp2.gimp_layer_set_composite_space.argtypes = (ct.c_int32, GIMP.LayerColourSpace)
+libgimp2.gimp_layer_set_composite_space.restype = ct.c_bool
+libgimp2.gimp_layer_get_composite_mode.argtypes = (ct.c_int32,)
+libgimp2.gimp_layer_get_composite_mode.restype = GIMP.LayerCompositeMode
+libgimp2.gimp_layer_set_composite_mode.argtypes = (ct.c_int32, GIMP.LayerCompositeMode)
+libgimp2.gimp_layer_set_composite_mode.restype = ct.c_bool
 
 # from libgimp/libgimp/gimpimageundo_pdb.h:
 
