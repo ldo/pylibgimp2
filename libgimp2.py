@@ -957,18 +957,13 @@ class ObjID :
 
     def __new__(celf, id) :
         self = celf._instances.get(id)
+        if self != None and type(self) != celf :
+            self = None # force creation of a separate wrapper for different expected type
+        #end if
         if self == None :
             self = super().__new__(celf)
             self.id = id
             celf._instances[id] = self
-        elif type(self) != celf :
-            raise TypeError \
-              (
-                    "object with ID %d previously created as of type “%s”"
-                    " is now wanted as type “%s”"
-                %
-                    (id, type(self).__name__, celf.__name__)
-              )
         #end if
         return \
             self
