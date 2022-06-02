@@ -569,8 +569,9 @@ def def_expect_type(expect_type) :
         conv
 #end def_expect_type
 
+_to_image = lambda i : Image(i)
 _to_drawable = lambda i : Drawable(i)
-  # forward reference
+  # forward references
 
 class PARAMTYPE(enum.Enum) :
 
@@ -589,7 +590,7 @@ class PARAMTYPE(enum.Enum) :
     COLOURARRAY = (GIMP.PDB_COLOURARRAY, ct.c_void_p, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident)
     COLOUR = (GIMP.PDB_COLOUR, GIMP.RGB, "d_colour", def_expect_type(GIMP.RGB), ident)
     DISPLAY = (GIMP.PDB_DISPLAY, ct.c_int32, "d_display", def_to_ct_int(32, True), ident)
-    IMAGE = (GIMP.PDB_IMAGE, ct.c_int32, "d_image", def_to_ct_int(32, True), ident)
+    IMAGE = (GIMP.PDB_IMAGE, ct.c_int32, "d_image", def_to_ct_int(32, True), _to_image)
     ITEM = (GIMP.PDB_ITEM, ct.c_int32, "d_item", def_to_ct_int(32, True), ident)
     LAYER = (GIMP.PDB_LAYER, ct.c_int32, "d_layer", def_to_ct_int(32, True), ident)
     # no enum for layer_mask?
@@ -1026,7 +1027,7 @@ class CallFailed(Exception) :
 class ObjID :
     "base class for convenient wrappers for objects which GIMP identifies" \
     " just by an integer ID. Instantiate a suitable subclass around such an" \
-    " ID, and you can use it make the relevant wrapped method calls."
+    " ID, and you can use it to make the relevant wrapped method calls."
 
     __slots__ = ("id", "__weakref__")
 
