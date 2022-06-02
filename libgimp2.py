@@ -1150,7 +1150,7 @@ class Drawable(ObjID) :
 
 #end Drawable
 
-class Layer(ObjID) :
+class Layer(Drawable) :
 
     __slots__ = ()
 
@@ -1285,7 +1285,7 @@ class Layer(ObjID) :
 
 #end Layer
 
-class LayerMask(ObjID) :
+class LayerMask(Drawable) :
 
     __slots__ = ()
 
