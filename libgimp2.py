@@ -607,188 +607,6 @@ def def_expect_type(expect_type) :
         conv
 #end def_expect_type
 
-_to_image = lambda i : Image(i)
-_to_drawable = lambda i : Drawable(i)
-  # forward references
-
-class PARAMTYPE(enum.Enum) :
-
-    # (argtype, ct_type, ParamData fieldname, to_ct_conv, from_ct_conv)
-    # FIXME: to_ct_conv routines for string pointers will need to stash ctype objects somewhere
-    INT32 = (GIMP.PDB_INT32, ct.c_int32, "d_int32", def_to_ct_int(32, True), ident)
-    INT16 = (GIMP.PDB_INT16, ct.c_int16, "d_int16", def_to_ct_int(16, True), ident)
-    INT8 = (GIMP.PDB_INT8, ct.c_int8, "d_int8", def_to_ct_int(8, False), ident)
-    FLOAT = (GIMP.PDB_FLOAT, ct.c_double, "d_float", ct.c_double, ident)
-    STRING = (GIMP.PDB_STRING, ct.c_char_p, "d_string", str_encode, str_decode)
-    INT32ARRAY = (GIMP.PDB_INT32ARRAY, ct.c_void_p, "d_int32array", def_seq_to_ct(ct.c_int32), ct_to_seq)
-    INT16ARRAY = (GIMP.PDB_INT16ARRAY, ct.c_void_p, "d_int16array", def_seq_to_ct(ct.c_int16), ct_to_seq)
-    INT8ARRAY = (GIMP.PDB_INT8ARRAY, ct.c_void_p, "d_int8array", def_seq_to_ct(ct.c_uint8), ct_to_seq)
-    FLOATARRAY = (GIMP.PDB_FLOATARRAY, ct.c_void_p, "d_floatarray", def_seq_to_ct(ct.c_double), ct_to_seq)
-    STRINGARRAY = (GIMP.PDB_STRINGARRAY, ct.c_void_p, "d_stringarray", def_seq_to_ct(ct.c_char_p, str_encode), def_ct_to_seq(str_decode))
-    COLOURARRAY = (GIMP.PDB_COLOURARRAY, ct.c_void_p, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident)
-    COLOUR = (GIMP.PDB_COLOUR, GIMP.RGB, "d_colour", def_expect_type(GIMP.RGB), ident)
-    DISPLAY = (GIMP.PDB_DISPLAY, ct.c_int32, "d_display", def_to_ct_int(32, True), ident)
-    IMAGE = (GIMP.PDB_IMAGE, ct.c_int32, "d_image", def_to_ct_int(32, True), _to_image)
-    ITEM = (GIMP.PDB_ITEM, ct.c_int32, "d_item", def_to_ct_int(32, True), ident)
-    LAYER = (GIMP.PDB_LAYER, ct.c_int32, "d_layer", def_to_ct_int(32, True), ident)
-    # no enum for layer_mask?
-    CHANNEL = (GIMP.PDB_CHANNEL, ct.c_int32, "d_channel", def_to_ct_int(32, True), ident)
-    DRAWABLE = (GIMP.PDB_DRAWABLE, ct.c_int32, "d_drawable", def_to_ct_int(32, True), _to_drawable)
-    SELECTION = (GIMP.PDB_SELECTION, ct.c_int32, "d_selection", def_to_ct_int(32, True), ident)
-    VECTORS = (GIMP.PDB_VECTORS, ct.c_int32, "d_vectors", def_to_ct_int(32, True), ident)
-    # no enum for d_unit?
-    PARASITE = (GIMP.PDB_PARASITE, GIMP.Parasite, "d_parasite", def_expect_type(GIMP.Parasite), ident)
-    # no enum for d_tattoo?
-    STATUS = (GIMP.PDB_STATUS, ct.c_uint, "d_status", def_to_ct_enum(GIMP.PDB_CANCEL), ident)
-
-    @property
-    def code(self) :
-        return \
-            self.value[0]
-    #end code
-
-    @property
-    def ct_type(self) :
-        return \
-            self.value[1]
-    #end ct_type
-
-    @property
-    def fieldname(self) :
-        return \
-            self.value[2]
-    #end fieldname
-
-    @property
-    def to_ct_conv(self) :
-        return \
-            self.value[3]
-    #end to_ct_conv
-
-    @property
-    def from_ct_conv(self) :
-        return \
-            self.value[4]
-    #end from_ct_conv
-
-    def __repr__(self) :
-        return \
-            "%s.%s" % (type(self).__name__, self.name)
-    #end __repr__
-
-#end PARAMTYPE
-PARAMTYPE.from_code = dict((t.code, t) for t in PARAMTYPE)
-# deprecated aliases:
-PARAMTYPE.PATH = PARAMTYPE.VECTORS
-PARAMTYPE.BOUNDARY = PARAMTYPE.COLOURARRAY
-PARAMTYPE.REGION = PARAMTYPE.ITEM
-
-def to_param_def(paramdef, save_strs) :
-    c_type = paramdef["type"]
-    if isinstance(c_type, PARAMTYPE) :
-        c_type = c_type.code
-    #end if
-    c_name = ct.c_char_p(paramdef["name"].encode())
-    c_descr = ct.c_char_p(paramdef["description"].encode())
-    save_strs.extend((c_name, c_descr))
-    return \
-        GIMP.ParamDef \
-          (
-            type = c_type,
-            name = c_name,
-            description = c_descr,
-          )
-#end to_param_def
-
-def param_to_ct(type, val) :
-    if not isinstance(type, PARAMTYPE) :
-        raise TypeError("type is not a PARAMTYPE")
-    #end if
-    paramdata = GIMP.ParamData()
-    setattr(paramdata, type.fieldname, type.to_ct_conv(val))
-    return \
-        GIMP.Param(type = type.code, data = paramdata)
-#end param_to_ct
-
-def params_to_ct(defs, vals) :
-    if len(vals) != len(defs) :
-        raise TypeError("expecting %d args, got %d" % (len(defs), len(vals)))
-    #end if
-    result = seq_to_ct \
-      (
-        seq = list(zip(defs, vals)),
-        ct_type = GIMP.Param,
-        conv = lambda v : param_to_ct(v[0]["type"], v[1])
-      )
-    return \
-        result
-#end params_to_ct
-
-def param_from_ct(param) :
-    type = PARAMTYPE.from_code[param.type]
-    return \
-        type.from_ct_conv(getattr(param.data, type.fieldname))
-#end param_from_ct
-
-class UI_PLACEMENT(enum.Enum) :
-    "information about required parameters for plugins registered" \
-    " at particular points in the UI."
-
-    # path_prefix, required_params (excluding run-mode)
-    TOOLBOX = ("<Toolbox>", ())
-    IMAGE = \
-        (
-            "<Image>",
-            (
-                {"type" : PARAMTYPE.IMAGE, "name" : "image", "description" : "Input image"},
-                {"type" : PARAMTYPE.DRAWABLE, "name" : "drawable", "description" : "Drawable to draw on"},
-            ),
-        )
-    # I don’t know how to use the ones below. Also note other path prefixes
-    # listed in app/plug-in/gimppluginprocedure.c in GIMP source code.
-    LOAD = \
-        (
-            "<Load>",
-            (
-                {"type" : PARAMTYPE.STRING, "name" : "?1", "description" : "?1"},
-                {"type" : PARAMTYPE.STRING, "name" : "?2", "description" : "?2"},
-            ),
-        )
-    SAVE = \
-        (
-            "<Save>",
-            (
-                {"type" : PARAMTYPE.IMAGE, "name" : "image", "description" : "Input image"},
-                {"type" : PARAMTYPE.DRAWABLE, "name" : "drawable", "description" : "Drawable to draw on"},
-                {"type" : PARAMTYPE.STRING, "name" : "?1", "description" : "?1"},
-                {"type" : PARAMTYPE.STRING, "name" : "?2", "description" : "?2"},
-            ),
-        )
-
-    @property
-    def path_prefix(self) :
-        return \
-            self.value[0]
-    #end path_prefix
-
-    @property
-    def nr_required_params(self) :
-        return \
-            len(self.value[1]) + 1
-    #end nr_required_params
-
-    @property
-    def required_params(self) :
-        return \
-            (
-                [{"type" : PARAMTYPE.INT32, "name" : "run-mode", "description" : "invocation mode"}]
-            +
-                list(dict(p) for p in self.value[1])
-            )
-    #end required_params
-
-#end UI_PLACEMENT
-
 #+
 # Routine arg/result types
 #-
@@ -1496,6 +1314,184 @@ class LayerMask(ObjID) :
     #end get_layer
 
 #end LayerMask
+
+class PARAMTYPE(enum.Enum) :
+
+    # (argtype, ct_type, ParamData fieldname, to_ct_conv, from_ct_conv)
+    # FIXME: to_ct_conv routines for string pointers will need to stash ctype objects somewhere
+    INT32 = (GIMP.PDB_INT32, ct.c_int32, "d_int32", def_to_ct_int(32, True), ident)
+    INT16 = (GIMP.PDB_INT16, ct.c_int16, "d_int16", def_to_ct_int(16, True), ident)
+    INT8 = (GIMP.PDB_INT8, ct.c_int8, "d_int8", def_to_ct_int(8, False), ident)
+    FLOAT = (GIMP.PDB_FLOAT, ct.c_double, "d_float", ct.c_double, ident)
+    STRING = (GIMP.PDB_STRING, ct.c_char_p, "d_string", str_encode, str_decode)
+    INT32ARRAY = (GIMP.PDB_INT32ARRAY, ct.c_void_p, "d_int32array", def_seq_to_ct(ct.c_int32), ct_to_seq)
+    INT16ARRAY = (GIMP.PDB_INT16ARRAY, ct.c_void_p, "d_int16array", def_seq_to_ct(ct.c_int16), ct_to_seq)
+    INT8ARRAY = (GIMP.PDB_INT8ARRAY, ct.c_void_p, "d_int8array", def_seq_to_ct(ct.c_uint8), ct_to_seq)
+    FLOATARRAY = (GIMP.PDB_FLOATARRAY, ct.c_void_p, "d_floatarray", def_seq_to_ct(ct.c_double), ct_to_seq)
+    STRINGARRAY = (GIMP.PDB_STRINGARRAY, ct.c_void_p, "d_stringarray", def_seq_to_ct(ct.c_char_p, str_encode), def_ct_to_seq(str_decode))
+    COLOURARRAY = (GIMP.PDB_COLOURARRAY, ct.c_void_p, "d_colourarray", def_seq_to_ct(def_expect_type(GIMP.RGB)), ident)
+    COLOUR = (GIMP.PDB_COLOUR, GIMP.RGB, "d_colour", def_expect_type(GIMP.RGB), ident)
+    DISPLAY = (GIMP.PDB_DISPLAY, ct.c_int32, "d_display", def_to_ct_int(32, True), ident)
+    IMAGE = (GIMP.PDB_IMAGE, ct.c_int32, "d_image", def_to_ct_int(32, True), Image)
+    ITEM = (GIMP.PDB_ITEM, ct.c_int32, "d_item", def_to_ct_int(32, True), ident)
+    LAYER = (GIMP.PDB_LAYER, ct.c_int32, "d_layer", def_to_ct_int(32, True), ident)
+    # no enum for layer_mask?
+    CHANNEL = (GIMP.PDB_CHANNEL, ct.c_int32, "d_channel", def_to_ct_int(32, True), ident)
+    DRAWABLE = (GIMP.PDB_DRAWABLE, ct.c_int32, "d_drawable", def_to_ct_int(32, True), Drawable)
+    SELECTION = (GIMP.PDB_SELECTION, ct.c_int32, "d_selection", def_to_ct_int(32, True), ident)
+    VECTORS = (GIMP.PDB_VECTORS, ct.c_int32, "d_vectors", def_to_ct_int(32, True), ident)
+    # no enum for d_unit?
+    PARASITE = (GIMP.PDB_PARASITE, GIMP.Parasite, "d_parasite", def_expect_type(GIMP.Parasite), ident)
+    # no enum for d_tattoo?
+    STATUS = (GIMP.PDB_STATUS, ct.c_uint, "d_status", def_to_ct_enum(GIMP.PDB_CANCEL), ident)
+
+    @property
+    def code(self) :
+        return \
+            self.value[0]
+    #end code
+
+    @property
+    def ct_type(self) :
+        return \
+            self.value[1]
+    #end ct_type
+
+    @property
+    def fieldname(self) :
+        return \
+            self.value[2]
+    #end fieldname
+
+    @property
+    def to_ct_conv(self) :
+        return \
+            self.value[3]
+    #end to_ct_conv
+
+    @property
+    def from_ct_conv(self) :
+        return \
+            self.value[4]
+    #end from_ct_conv
+
+    def __repr__(self) :
+        return \
+            "%s.%s" % (type(self).__name__, self.name)
+    #end __repr__
+
+#end PARAMTYPE
+PARAMTYPE.from_code = dict((t.code, t) for t in PARAMTYPE)
+# deprecated aliases:
+PARAMTYPE.PATH = PARAMTYPE.VECTORS
+PARAMTYPE.BOUNDARY = PARAMTYPE.COLOURARRAY
+PARAMTYPE.REGION = PARAMTYPE.ITEM
+
+def to_param_def(paramdef, save_strs) :
+    c_type = paramdef["type"]
+    if isinstance(c_type, PARAMTYPE) :
+        c_type = c_type.code
+    #end if
+    c_name = ct.c_char_p(paramdef["name"].encode())
+    c_descr = ct.c_char_p(paramdef["description"].encode())
+    save_strs.extend((c_name, c_descr))
+    return \
+        GIMP.ParamDef \
+          (
+            type = c_type,
+            name = c_name,
+            description = c_descr,
+          )
+#end to_param_def
+
+def param_to_ct(type, val) :
+    if not isinstance(type, PARAMTYPE) :
+        raise TypeError("type is not a PARAMTYPE")
+    #end if
+    paramdata = GIMP.ParamData()
+    setattr(paramdata, type.fieldname, type.to_ct_conv(val))
+    return \
+        GIMP.Param(type = type.code, data = paramdata)
+#end param_to_ct
+
+def params_to_ct(defs, vals) :
+    if len(vals) != len(defs) :
+        raise TypeError("expecting %d args, got %d" % (len(defs), len(vals)))
+    #end if
+    result = seq_to_ct \
+      (
+        seq = list(zip(defs, vals)),
+        ct_type = GIMP.Param,
+        conv = lambda v : param_to_ct(v[0]["type"], v[1])
+      )
+    return \
+        result
+#end params_to_ct
+
+def param_from_ct(param) :
+    type = PARAMTYPE.from_code[param.type]
+    return \
+        type.from_ct_conv(getattr(param.data, type.fieldname))
+#end param_from_ct
+
+class UI_PLACEMENT(enum.Enum) :
+    "information about required parameters for plugins registered" \
+    " at particular points in the UI."
+
+    # path_prefix, required_params (excluding run-mode)
+    TOOLBOX = ("<Toolbox>", ())
+    IMAGE = \
+        (
+            "<Image>",
+            (
+                {"type" : PARAMTYPE.IMAGE, "name" : "image", "description" : "Input image"},
+                {"type" : PARAMTYPE.DRAWABLE, "name" : "drawable", "description" : "Drawable to draw on"},
+            ),
+        )
+    # I don’t know how to use the ones below. Also note other path prefixes
+    # listed in app/plug-in/gimppluginprocedure.c in GIMP source code.
+    LOAD = \
+        (
+            "<Load>",
+            (
+                {"type" : PARAMTYPE.STRING, "name" : "?1", "description" : "?1"},
+                {"type" : PARAMTYPE.STRING, "name" : "?2", "description" : "?2"},
+            ),
+        )
+    SAVE = \
+        (
+            "<Save>",
+            (
+                {"type" : PARAMTYPE.IMAGE, "name" : "image", "description" : "Input image"},
+                {"type" : PARAMTYPE.DRAWABLE, "name" : "drawable", "description" : "Drawable to draw on"},
+                {"type" : PARAMTYPE.STRING, "name" : "?1", "description" : "?1"},
+                {"type" : PARAMTYPE.STRING, "name" : "?2", "description" : "?2"},
+            ),
+        )
+
+    @property
+    def path_prefix(self) :
+        return \
+            self.value[0]
+    #end path_prefix
+
+    @property
+    def nr_required_params(self) :
+        return \
+            len(self.value[1]) + 1
+    #end nr_required_params
+
+    @property
+    def required_params(self) :
+        return \
+            (
+                [{"type" : PARAMTYPE.INT32, "name" : "run-mode", "description" : "invocation mode"}]
+            +
+                list(dict(p) for p in self.value[1])
+            )
+    #end required_params
+
+#end UI_PLACEMENT
 
 #+
 # Interface to Procedural Database. This is where a plugin registers
