@@ -18,14 +18,15 @@ from weakref import \
     WeakValueDictionary
 
 import gegl
-import libgimpgtk2
-from libgimpgtk2 import \
-    GTK, \
+from gegl import \
     GType, \
-    Widget, \
     str_encode, \
     str_encode_optional, \
     str_decode
+import libgimpgtk2
+from libgimpgtk2 import \
+    GTK, \
+    Widget
 
 class Structure(ct.Structure) :
 
@@ -1178,7 +1179,7 @@ class Drawable(ObjID) :
 
     def get_pixel(self, x, y) :
         "Note that returned pixel data was allocated with g_new(), and" \
-        " needs to be freed with libgimpgtk2.g_free()."
+        " needs to be freed with gegl.libglib2.g_free()."
         # Perhaps I should create my own wrapper around
         # gimp_run_procedure("gimp-drawable-get-pixel" ...),
         # following example of gimp_drawable_get_pixel routine in

@@ -11,20 +11,15 @@ functionality to enable implementing a basic UI for plug-ins for GIMP 2.
 
 import ctypes as ct
 
-str_encode = lambda s : s.encode()
-str_encode_optional = lambda s : (lambda : None, lambda : s.encode())[s != None]()
-str_decode = lambda s : s.decode()
+# lowest-level GLib/GObject stuff is now in Gabler’s gegl module
+from gegl import \
+    str_encode, \
+    str_encode_optional, \
+    str_decode, \
+    GType
 
 CANT_BE_BOTHERED_FOR_NOW = lambda : []
   # for _fields_ definitions I can’t be bothered to fill in for now
-
-# from /usr/lib/«arch»/glib-2.0/include/glibconfig.h:
-
-gsize = ct.c_ulong
-
-# from glib-2.0/gobject/glib-types.h:
-
-GType = gsize
 
 # from glib-2.0/gobject/gclosure.h:
 
