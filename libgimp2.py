@@ -1332,6 +1332,171 @@ class Drawable(ObjID) :
 
 #end Drawable
 
+class Layer(ObjID) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, image, name, width, height, type, opacity, mode) :
+        if not isinstance(image, Image) :
+            raise TypeError("image must be an Image")
+        #end if
+        result = libgimp2.gimp_layer_new(image.id, str_encode(name), width, height, type, opacity, mode)
+        if result < 0 :
+            raise CallFailed("gimp_layer_new")
+        #end if
+        return \
+            celf(result)
+    #end create
+
+    # TODO create_from_surface
+
+    @classmethod
+    def create_from_visible(celf, image, dest_image, name) :
+        if not isinstance(image, Image) or not isinstance(dest_image, Image) :
+            raise TypeError("image and dest_image must be Image objects")
+        #end if
+        result = libgimp2.gimp_layer_new_from_visible(image.id, dest_image.id, str_encode(name))
+        if result < 0 :
+            raise CallFailed("gimp_layer_new_from_visible")
+        #end if
+        return \
+            celf(result)
+    #end create_from_visible
+
+    @classmethod
+    def create_from_drawable(celf, drawable, dest_image, name) :
+        if not isinstance(drawable, Drawable) or not isinstance(dest_image, Image) :
+            raise TypeError("drawable must be Drawable and image must be Image")
+        #end if
+        result = libgimp2.gimp_layer_new_from_drawable(drawable.id, dest_image.id, str_encode(name))
+        if result < 0 :
+            raise CallFailed("gimp_layer_new_from_drawable")
+        #end if
+        return \
+            celf(result)
+    #end create_from_drawable
+
+    # TODO layer_group_new
+
+    def add_alpha(self) :
+        if not libgimp2.gimp_layer_add_alpha(self.id) :
+            raise CallFailed("gimp_layer_add_alpha")
+        #end if
+    #end add_alpha
+
+    def flatten(self) :
+        if not libgimp2.gimp_layer_flatten(self.id) :
+            raise CallFailed("gimp_layer_flatten")
+        #end if
+    #end flatten
+
+    def scale(self, new_width, new_height, local_origin) :
+        if not libgimp2.gimp_layer_scale(self.id, new_width, new_height, local_origin) :
+            raise CallFailed("gimp_layer_scale")
+        #end if
+    #end scale
+
+    def resize(self, new_width, new_height, offx, offy) :
+        if not libgimp2.gimp_layer_resize(self.id, new_width, new_height, offx, offy) :
+            raise CallFailed("gimp_layer_resize")
+        #end if
+    #end resize
+
+    def resize_to_image_size(self) :
+        if not libgimp2.gimp_layer_resize_to_image_size(self.id) :
+            raise CallFailed("gimp_layer_resize_to_image_size")
+        #end if
+    #end resize_to_image_size
+
+    def translate(self, offx, offy) :
+        if not libgimp2.gimp_layer_translate(self.id, offx, offy) :
+            raise CallFailed("gimp_layer_translate")
+        #end if
+    #end translate
+
+    def set_offsets(self, offx, offy) :
+        if not libgimp2.gimp_layer_set_offsets(self.id, offx, offy) :
+            raise CallFailed("gimp_layer_set_offsets")
+        #end if
+    #end set_offsets
+
+    def create_mask(self, mask_type) :
+        result = libgimp2.gimp_layer_create_mask(self.id, mask_type)
+        if result < 0 :
+            raise CallFailed("gimp_layer_create_mask")
+        #end if
+        return \
+            LayerMask(result)
+    #end create_mask
+
+    def get_mask(self) :
+        result = libgimp2.gimp_layer_get_mask(self.id)
+        if result >= 0 :
+            result = LayerMask(result)
+        else :
+            result = None
+        #end if
+        return \
+            result
+    #end get_mask
+
+    def add_mask(self, mask) :
+        if not isinstance(mask, LayerMask) :
+            raise TypeError("mask must be a LayerMask")
+        #end if
+        if not libgimp2.gimp_layer_add_mask(self.id, mask.id) :
+            raise CallFailed("gimp_layer_add_mask")
+        #end if
+    #end add_mask
+
+    def remove_mask(self, mode) :
+        if not libgimp2.gimp_layer_remove_mask(self.id, mode) :
+            raise CallFailed("gimp_layer_remove_mask")
+        #end if
+    #end remove_mask
+
+    @property
+    def is_floating_sel(self) :
+        return \
+            libgimp2.gimp_layer_is_floating_sel(self.id)
+    #end is_floating_sel
+
+    # TODO get/set lock_alpha, apply_mask, show_mask, edit_mask,
+    # opacity, mode, blend_space, composite_space, composite_mode
+
+#end Layer
+
+class LayerMask(ObjID) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, from_layer, mask_type) :
+        if not isinstance(from_layer, Layer) :
+            raise TypeError("from_layer must be a layer")
+        #end if
+        result = libgimp2.gimp_layer_create_mask(from_layer.id, mask_type)
+        if result < 0 :
+            raise CallFailed("gimp_layer_create_mask")
+        #end if
+        return \
+            celf(result)
+    #end create
+
+    def get_layer(self) :
+        result = libgimp2.gimp_layer_from_mask(self.id)
+        if result >= 0 :
+            result = Layer(result)
+        else :
+            result = None
+        #end if
+        return \
+            result
+    #end get_layer
+
+#end LayerMask
+
 #+
 # Interface to Procedural Database. This is where a plugin registers
 # its callbacks, and it can also find and call routines registered
