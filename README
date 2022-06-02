@@ -1,5 +1,5 @@
-This project came into existence after I discovered that GIMP had lost
-its Python support in Debian.
+This project came into existence after I discovered that
+[GIMP](https://gimp.org/) had lost its Python support in Debian 11.
 
 I understand that GIMP 3 is requiring a lot of work, and the Python
 2-to-3 transition has not helped matters. Looking in a recent GIMP 2
@@ -38,4 +38,4 @@ my `gimp_filters` project on [`GitLab`](https://gitlab.com/ldo/gimp_filters)
 or [`GitHub`](https://github.com/ldo/gimp_filters).
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2022 May 29
+2022 June 2
