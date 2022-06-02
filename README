@@ -25,6 +25,10 @@ wrappers for GLib/GTK (PyGTK for GTK 2.x, GObject Introspection for
 later versions). I have to create my own, to interoperate with my
 wrappers for the GIMP API.
 
+This package also relies on Gabler, my wrappers for the GEGL and BABL
+libraries, available from [GitLab](https://gitlab.com/ldo/gabler)
+or [GitHub](https://github.com/ldo/gabler).
+
 This is still a work in progress. I have only implemented a fraction of
 the wrappers for the full GIMP API, not to mention GTK 2. So far the
 code is complete enough to support my own simple plugins available on

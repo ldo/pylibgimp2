@@ -1,7 +1,9 @@
 """
 This module is a wrapper around the GIMP plug-in APIs (libgimp-2.0 etc),
 implemented in pure Python using ctypes. It does not depend on any
-Python support built into GIMP itself.
+Python support built into GIMP itself, but it does need my GEGL
+and BABL wrappers, obtainable from <https://gitlab.com/ldo/gabler>
+or <https://github.com/ldo/gabler>.
 """
 #+
 # Copyright 2022 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
@@ -12,6 +14,10 @@ import sys
 import os
 import enum
 import ctypes as ct
+from weakref import \
+    WeakValueDictionary
+
+import gegl
 import libgimpgtk2
 from libgimpgtk2 import \
     GTK, \
@@ -563,6 +569,9 @@ def def_expect_type(expect_type) :
         conv
 #end def_expect_type
 
+_to_drawable = lambda i : Drawable(i)
+  # forward reference
+
 class PARAMTYPE(enum.Enum) :
 
     # (argtype, ct_type, ParamData fieldname, to_ct_conv, from_ct_conv)
@@ -585,7 +594,7 @@ class PARAMTYPE(enum.Enum) :
     LAYER = (GIMP.PDB_LAYER, ct.c_int32, "d_layer", def_to_ct_int(32, True), ident)
     # no enum for layer_mask?
     CHANNEL = (GIMP.PDB_CHANNEL, ct.c_int32, "d_channel", def_to_ct_int(32, True), ident)
-    DRAWABLE = (GIMP.PDB_DRAWABLE, ct.c_int32, "d_drawable", def_to_ct_int(32, True), ident)
+    DRAWABLE = (GIMP.PDB_DRAWABLE, ct.c_int32, "d_drawable", def_to_ct_int(32, True), _to_drawable)
     SELECTION = (GIMP.PDB_SELECTION, ct.c_int32, "d_selection", def_to_ct_int(32, True), ident)
     VECTORS = (GIMP.PDB_VECTORS, ct.c_int32, "d_vectors", def_to_ct_int(32, True), ident)
     # no enum for d_unit?
@@ -696,6 +705,8 @@ class UI_PLACEMENT(enum.Enum) :
                 {"type" : PARAMTYPE.DRAWABLE, "name" : "drawable", "description" : "Drawable to draw on"},
             ),
         )
+    # I don’t know how to use the ones below. Also note other path prefixes
+    # listed in app/plug-in/gimppluginprocedure.c in GIMP source code.
     LOAD = \
         (
             "<Load>",
@@ -1015,13 +1026,30 @@ class CallFailed(Exception) :
 class ObjID :
     "base class for convenient wrappers for objects which GIMP identifies" \
     " just by an integer ID. Instantiate a suitable subclass around such an" \
-    " ID, and you can use it make the relevant wrappe metho calls."
+    " ID, and you can use it make the relevant wrapped method calls."
 
-    __slots__ = ("id",)
+    __slots__ = ("id", "__weakref__")
 
-    def __init__(self, id) :
-        self.id = id
-    #end __init__
+    _instances = WeakValueDictionary()
+
+    def __new__(celf, id) :
+        self = celf._instances.get(id)
+        if self == None :
+            self = super().__new__(celf)
+            self.id = id
+            celf._instances[id] = self
+        elif type(self) != celf :
+            raise TypeError \
+              (
+                    "object with ID %d previously created as of type “%s”"
+                    " is now wanted as type “%s”"
+                %
+                    (id, type(self).__name__, celf.__name__)
+              )
+        #end if
+        return \
+            self
+    #end __new__
 
 #end ObjID
 
@@ -1186,6 +1214,16 @@ class Drawable(ObjID) :
             raise CallFailed("gimp_drawable_foreground_extract")
         #end if
     #end foreground_extract
+
+    def get_buffer(self) :
+        return \
+            gegl.Buffer(libgimp2.gimp_drawable_get_buffer(self.id))
+    #end get_buffer
+
+    def get_shadow_buffer(self) :
+        return \
+            gegl.Buffer(libgimp2.gimp_drawable_get_shadow_buffer(self.id))
+    #end get_shadow_buffer
 
 #end Drawable
 
