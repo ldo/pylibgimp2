@@ -1590,13 +1590,52 @@ class PDB :
 
     def __getattr__(self, procname) :
 
-        def def_proc_wrapper(paramdefs, returndefs) :
+        def def_proc_wrapper(proctype, paramdefs, returndefs) :
 
             c_procname = str_encode(procname)
 
-            def proc_wrapper(*args) :
+            def proc_wrapper(*args, **kwargs) :
                 if self._params_filter != None :
                     args = self._params_filter(args)
+                #end if
+                if len(args) + len(kwargs) != len(paramdefs) :
+                    raise TypeError \
+                      (
+                            "expecting %d arg(s), got %d positional + %d keyword = %d"
+                        %
+                            (len(paramdefs), len(args), len(kwargs), len(args) + len(kwargs))
+                      )
+                #end if
+                if len(kwargs) != 0 :
+                    paramnames = list(p["name"].replace("-", "_") for p in paramdefs)
+                    done_positional = set(paramnames[:len(args)])
+                    expect_keyword = list(paramnames[len(args):])
+                    unrecognized = set(kwargs.keys()) - set(paramnames)
+                    if len(unrecognized) != 0 :
+                        raise TypeError \
+                          (
+                                "unrecognized arg keyword(s) %s, must be in %s"
+                            %
+                                (
+                                    ", ".join(sorted(unrecognized)),
+                                    ", ".join(paramnames),
+                                )
+                          )
+                    #end if
+                    dup_keyword = set(kwargs.keys()) & done_positional
+                    if len(dup_keyword) != 0 :
+                        raise TypeError \
+                          (
+                                "keyword arg(s) %s already specified positionally"
+                            %
+                                ", ".join(sorted(dup_keyword))
+                          )
+                    #end if
+                    # assert set(kwargs.keys()) == set(expect_keyword)
+                    args = list(args)
+                    for key in paramnames[len(args):] :
+                        args.append(kwargs[key])
+                    #end for
                 #end if
                 c_args = params_to_ct(paramdefs, args)
                 c_nr_returns = ct.c_int()
@@ -1638,7 +1677,8 @@ class PDB :
             if self._procinfo_check != None :
                 self._procinfo_check(procinfo)
             #end if
-            self._procs[procname] = def_proc_wrapper(procinfo["args"], procinfo["return_vals"])
+            self._procs[procname] = def_proc_wrapper \
+                (procinfo["proc_type"], procinfo["args"], procinfo["return_vals"])
         #end if
         return \
             self._procs[procname]
