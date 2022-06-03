@@ -310,7 +310,7 @@ class GIMP :
     QueryProc = ct.CFUNCTYPE(None)
     RunProc = ct.CFUNCTYPE \
         (None, ct.c_char_p, ct.c_int, ct.POINTER(Param), ct.POINTER(ct.c_int), ct.POINTER(ct.POINTER(Param)))
-        # (name, nparams, params, nreturn_vals, return_vals)
+        # (name, nparams, params, nreturns, returns)
     NO_INIT_PROC = InitProc(0)
     NO_QUIT_PROC = QuitProc(0)
     NO_QUERY_PROC = QueryProc(0)
@@ -1522,8 +1522,8 @@ def procedural_db_proc_info(procname : str) :
     c_num_args = ct.c_int()
     c_num_values = ct.c_int()
     c_args = ct.POINTER(GIMP.ParamDef)()
-    c_return_vals = ct.POINTER(GIMP.ParamDef)()
-    success = libgimp2.gimp_procedural_db_proc_info(c_procname, ct.byref(c_blurb), ct.byref(c_help), ct.byref(c_author), ct.byref(c_copyright), ct.byref(c_date), ct.byref(c_proc_type), ct.byref(c_num_args), ct.byref(c_num_values), ct.byref(c_args), ct.byref(c_return_vals))
+    c_returns = ct.POINTER(GIMP.ParamDef)()
+    success = libgimp2.gimp_procedural_db_proc_info(c_procname, ct.byref(c_blurb), ct.byref(c_help), ct.byref(c_author), ct.byref(c_copyright), ct.byref(c_date), ct.byref(c_proc_type), ct.byref(c_num_args), ct.byref(c_num_values), ct.byref(c_args), ct.byref(c_returns))
     if success :
         result = \
             {
@@ -1538,7 +1538,7 @@ def procedural_db_proc_info(procname : str) :
         for keyword, nr_items, c_items in \
             (
                 ("args", c_num_args.value, c_args),
-                ("return_vals", c_num_values.value, c_return_vals),
+                ("returns", c_num_values.value, c_returns),
             ) \
         :
             result[keyword] = \
@@ -1553,7 +1553,7 @@ def procedural_db_proc_info(procname : str) :
                   )
         #end for
         libgimp2.gimp_destroy_paramdefs(c_args, c_num_args.value)
-        libgimp2.gimp_destroy_paramdefs(c_return_vals, c_num_values.value)
+        libgimp2.gimp_destroy_paramdefs(c_returns, c_num_values.value)
     else :
         result = None
     #end if
@@ -1565,9 +1565,9 @@ class PDB :
     "local cache of GIMP’s procedure database (PDB). You can call any" \
     " procedure registered in the PDB as\n" \
     "\n" \
-    "    return_vals = pdb.procname(args)\n" \
+    "    returns = pdb.procname(args)\n" \
     "\n" \
-    " where args and return_vals are sequences of argument/return values." \
+    " where args and returns are sequences of argument/return values." \
     " Conversions between Python objects and GIMP.Param representation will" \
     " happen automatically, according to the argument and return ParamDefs" \
     " registered for the procedure, so you never pass or get back any" \
@@ -1678,7 +1678,7 @@ class PDB :
                 self._procinfo_check(procinfo)
             #end if
             self._procs[procname] = def_proc_wrapper \
-                (procinfo["proc_type"], procinfo["args"], procinfo["return_vals"])
+                (procinfo["proc_type"], procinfo["args"], procinfo["returns"])
         #end if
         return \
             self._procs[procname]
@@ -1691,7 +1691,7 @@ class PDBExtra :
 
     def check_one_result(procinfo) :
         # ensures the procedure only returns one result (besides the status).
-        if len(procinfo["return_vals"]) != 1 :
+        if len(procinfo["returns"]) != 1 :
             raise TypeError("procedure %s does not return a single non-status result: %s" % (procinfo["name"], repr(procinfo)))
         #end if
     check_one_result
@@ -1862,20 +1862,20 @@ def wrap_run_proc(run_proc) :
     "\n" \
     "    def run_proc(name, params) :\n" \
     "        ...\n" \
-    "        return return_vals\n" \
+    "        return returns\n" \
     "    #end run_proc\n"
 
     last_return = None
       # to save constructed objects in-between invocations (not re-entrant)
 
-    def run_wrapper(c_name, nparams, c_params, nreturn_vals, c_return_vals) :
+    def run_wrapper(c_name, nparams, c_params, nreturns, c_returns) :
         nonlocal last_return
         name = str_decode(c_name)
         params = ct_to_seq(c_params[:nparams], param_from_ct)
-        return_vals = run_proc(name, params)
-        last_return = seq_to_ct(return_vals, GIMP.Param, lambda v : param_to_ct(v[0], v[1]))
-        nreturn_vals[0] = len(return_vals)
-        c_return_vals[0] = last_return
+        returns = run_proc(name, params)
+        last_return = seq_to_ct(returns, GIMP.Param, lambda v : param_to_ct(v[0], v[1]))
+        nreturns[0] = len(returns)
+        c_returns[0] = last_return
     #end run_wrapper
 
 #begin wrap_run_proc
@@ -1884,8 +1884,8 @@ def wrap_run_proc(run_proc) :
         GIMP.RunProc(run_wrapper)
 #end wrap_run_proc
 
-def install_procedure(name : str, blurb : str, help: str, author : str, copyright : str, date : str, item_label : str, image_types : str, type : GIMP.PDBProcType, params, return_vals) :
-    "installs a procedure in the procedure database. params and return_vals must be sequences" \
+def install_procedure(name : str, blurb : str, help: str, author : str, copyright : str, date : str, item_label : str, image_types : str, type : GIMP.PDBProcType, params, returns) :
+    "installs a procedure in the procedure database. params and returns must be sequences" \
     " of dicts each with type, name and description fields."
     c_name = name.encode()
     c_blurb = blurb.encode()
@@ -1903,14 +1903,14 @@ def install_procedure(name : str, blurb : str, help: str, author : str, copyrigh
         c_params = None
         nr_params = 0
     #end if
-    if return_vals != None :
-        c_return_vals = seq_to_ct(return_vals, GIMP.ParamDef, lambda v : to_param_def(v, save_strs))
-        nr_return_vals = len(return_vals)
+    if returns != None :
+        c_returns = seq_to_ct(returns, GIMP.ParamDef, lambda v : to_param_def(v, save_strs))
+        nr_returns = len(returns)
     else :
-        c_return_vals = None
-        nr_return_vals = 0
+        c_returns = None
+        nr_returns = 0
     #end if
-    libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_item_label, c_image_types, type, nr_params, nr_return_vals, c_params, c_return_vals)
+    libgimp2.gimp_install_procedure(c_name, c_blurb, c_help, c_author, c_copyright, c_date, c_item_label, c_image_types, type, nr_params, nr_returns, c_params, c_returns)
 #end install_procedure
 
 #+
@@ -2134,7 +2134,7 @@ class Dialog(Widget) :
 
 installed_procedures = {}
 
-def plugin_install(name, *, blurb, help, author, copyright, date, image_types, placement, action, params, return_vals, use_gegl = False, menu_name, item_label) :
+def plugin_install(name, *, blurb, help, author, copyright, date, image_types, placement, action, params, returns, use_gegl = False, menu_name, item_label) :
     "registers a plugin action to be dispatched under the given name," \
     " and optionally attached to the given menu item. The params omit the" \
     " initial mandatory ones, which are determined from the placement. The" \
@@ -2174,7 +2174,7 @@ def plugin_install(name, *, blurb, help, author, copyright, date, image_types, p
             "type" : GIMP.PLUGIN,
             "action" : action,
             "params" : params,
-            "return_vals" : return_vals,
+            "returns" : returns,
             "image_types" : image_types,
             "use_gegl" : use_gegl,
 
@@ -2212,7 +2212,7 @@ def register_dispatched() :
                     entry["placement"].required_params
                 +
                     entry["params"],
-            return_vals = entry["return_vals"],
+            returns = entry["returns"],
             item_label = entry["item_label"],
           )
         if entry["menu_name"] != None :
@@ -2345,9 +2345,9 @@ def run_dispatched(name, params) :
         args = params[1:entry["placement"].nr_required_params]
           # omit run_mode
         kwargs = cur_params.get_current()
-        return_vals = entry["action"](*args, **kwargs)
-        if return_vals == None :
-            return_vals = [(PARAMTYPE.STATUS, GIMP.PDB_SUCCESS)]
+        returns = entry["action"](*args, **kwargs)
+        if returns == None :
+            returns = [(PARAMTYPE.STATUS, GIMP.PDB_SUCCESS)]
         #end if
         if run_mode != GIMP.RUN_NONINTERACTIVE :
             displays_flush()
@@ -2358,13 +2358,13 @@ def run_dispatched(name, params) :
             #end if
         #end if
     else :
-        return_vals = [(PARAMTYPE.STATUS, GIMP.PDB_CANCEL)]
+        returns = [(PARAMTYPE.STATUS, GIMP.PDB_CANCEL)]
     #end if
     if entry["use_gegl"] :
         gegl.exit()
     #end if
     return \
-        return_vals
+        returns
 #end run_dispatched
 
 def main(*, init_proc = None, quit_proc = None, query_proc = None, run_proc = None) :
