@@ -20,6 +20,7 @@ from weakref import \
 import gegl
 from gegl import \
     GType, \
+    ident, \
     str_encode, \
     str_encode_optional, \
     str_decode
@@ -457,8 +458,6 @@ class GIMP :
     #end Dialog
 
 #end GIMP
-
-ident = lambda x : x
 
 def def_c_char_p_encode(save_strs) :
 
