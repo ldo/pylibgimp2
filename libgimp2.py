@@ -2134,7 +2134,7 @@ class Dialog(Widget) :
 
 installed_procedures = {}
 
-def plugin_install(name, blurb, help, author, copyright, date, image_types, placement, action, params, return_vals, menu_name, item_label) :
+def plugin_install(name, *, blurb, help, author, copyright, date, image_types, placement, action, params, return_vals, use_gegl = False, menu_name, item_label) :
     "registers a plugin action to be dispatched under the given name," \
     " and optionally attached to the given menu item. The params omit the" \
     " initial mandatory ones, which are determined from the placement. The" \
@@ -2176,6 +2176,7 @@ def plugin_install(name, blurb, help, author, copyright, date, image_types, plac
             "params" : params,
             "return_vals" : return_vals,
             "image_types" : image_types,
+            "use_gegl" : use_gegl,
 
             "do_ui" : do_ui,
             "menu_name" : menu_name,
@@ -2324,6 +2325,9 @@ def run_dispatched(name, params) :
     #end do_settings
 
 #begin run_dispatched
+    if entry["use_gegl"] :
+        gegl.init()
+    #end if
     run_mode = params[0]
     confirm = True # to begin with
     if run_mode == GIMP.RUN_INTERACTIVE :
@@ -2355,6 +2359,9 @@ def run_dispatched(name, params) :
         #end if
     else :
         return_vals = [(PARAMTYPE.STATUS, GIMP.PDB_CANCEL)]
+    #end if
+    if entry["use_gegl"] :
+        gegl.exit()
     #end if
     return \
         return_vals
