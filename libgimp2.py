@@ -16,6 +16,7 @@ import enum
 import ctypes as ct
 from weakref import \
     WeakValueDictionary
+import colorsys
 
 import gegl
 from gegl import \
@@ -448,6 +449,20 @@ class GIMP :
     COLOUR_SELECTOR_SIZE = 150
     COLOUR_SELECTOR_BAR_SIZE = 15
 
+    class ColourSelector(Structure) :
+        pass
+    ColourSelector._fields_ = \
+        [
+            ("parent_instance", ct.c_void_p), # GtkBox
+            ("toggles_visible", ct.c_bool),
+            ("toggles_sensitive", ct.c_bool),
+            ("show_alpha", ct.c_bool),
+            ("rgb", RGB),
+            ("hsv", HSV),
+            ("channel", ColourSelectorChannel),
+        ]
+    #end ColourSelector
+
     # from libgimpwidgets/gimpdialog.h:
 
     class Dialog(Structure) :
@@ -872,6 +887,8 @@ libgimpui2.gimp_spin_button_new_with_range.restype = ct.c_void_p
 
 # from libgimpwidgets/gimpcolorselector.h:
 
+libgimpui2.gimp_color_selector_get_type.argtypes = ()
+libgimpui2.gimp_color_selector_get_type.restype = GType
 libgimpui2.gimp_color_selector_new.argtypes = (GType, ct.POINTER(GIMP.RGB), ct.POINTER(GIMP.HSV), GIMP.ColourSelectorChannel)
 libgimpui2.gimp_color_selector_new.restype = ct.c_void_p
 libgimpui2.gimp_color_selector_set_toggles_visible.argtypes = (ct.c_void_p, ct.c_bool)
@@ -905,6 +922,11 @@ libgimpui2.gimp_color_selector_channel_changed.restype = None
 libgimpui2.gimp_color_selector_model_visible_changed.argtypes = (ct.c_void_p, GIMP.ColourSelectorModel)
 libgimpui2.gimp_color_selector_model_visible_changed.restype = None
 # todo gimp_color_selector_set_config
+
+# from libgimpwidgets/gimpcolorselect.h:
+
+libgimpui2.gimp_color_select_get_type.argtypes = ()
+libgimpui2.gimp_color_select_get_type.restype = GType
 
 # from libgimpwidgets/gimpdialog.h:
 
@@ -1777,7 +1799,7 @@ class Params :
         #end if
         self.defs = list(defs)
         for e in self.defs :
-            if "entry_style" not in e :
+            if e["type"] == PARAMTYPE.FLOAT and "entry_style" not in e :
                 e["entry_style"] = ENTRYSTYLE.SPINBUTTON # default
             #end if
         #end for
@@ -1935,6 +1957,28 @@ def ui_init(preview : bool) :
     "need to call this before using any UI functions."
     libgimpui2.gimp_ui_init(str_encode(prog_name), preview)
 #end ui_init
+
+class ColourSelect(Widget) :
+    "high-level wrapper for a GIMP colour selector. Actually GIMP provides" \
+    " a “color_selector” abstract base class, and a “color_select”" \
+    " concrete implementation of this; this wrapper represents the latter."
+
+    @classmethod
+    def create(celf, rgb : GIMP.RGB, channel) :
+        hsv = GIMP.HSV()
+        hsv.h, hsv.s, hsv.v, hsv.a = colorsys.rgb_to_hsv(rgb.r, rgb.g, rgb.b) + (rgb.a,)
+        result = libgimpui2.gimp_color_selector_new \
+          (
+            libgimpui2.gimp_color_select_get_type(), # selector_type
+            ct.byref(rgb), # *rgb
+            ct.byref(hsv), # *hsv
+            channel # channel
+          )
+        return \
+            celf(result)
+    #end create
+
+#end ColourSelect
 
 class Table(libgimpgtk2.Table) :
 
@@ -2133,17 +2177,27 @@ def plugin_install(name, *, blurb, help, author, copyright, date, image_types, p
         params = []
     #end if
     do_ui = len(params) != 0
+    only_handle_paramtypes = (PARAMTYPE.COLOUR, PARAMTYPE.FLOAT)
     if do_ui :
         if (
             not all
               (
-                    p["type"] in (PARAMTYPE.FLOAT,)
-                or
-                    not all(k in p for k in ("lower", "upper"))
+                    p["type"] in only_handle_paramtypes
+                and
+                    (
+                        p["type"] != PARAMTYPE.FLOAT
+                    or
+                        all(k in p for k in ("lower", "upper"))
+                    )
                 for p in params
               )
         ) :
-            raise ValueError("auto UI can only handle FLOAT params for now")
+            raise ValueError \
+              (
+                    "auto UI can only handle %s params for now"
+                %
+                    ", ".join(n.name for n in only_handle_paramtypes)
+              )
         #end if
     #end if
     installed_procedures[name] = \
@@ -2208,6 +2262,23 @@ def run_dispatched(name, params) :
     cur_params = Params(name, entry["params"])
 
     def do_settings() :
+
+        c_wrap = []
+
+        def def_handle_rgb_changed(rgb_param) :
+
+            def handle_rgb_changed(widget, rgb_elt, hsv_elt) :
+                ct.memmove(rgb_param, rgb_elt, ct.sizeof(GIMP.RGB))
+            #end handle_rgb_changed
+
+        #begin def_handle_rgb_changed
+            result = ct.CFUNCTYPE(None, ct.c_void_p, ct.c_void_p, ct.c_void_p)(handle_rgb_changed)
+            c_wrap.append(result)
+            return \
+                result
+        #end def_handle_rgb_changed
+
+    #begin do_settings
         ui_init(False)
         settings = Dialog.create \
           (
@@ -2238,62 +2309,80 @@ def run_dispatched(name, params) :
         main_vbox.pack_start(table, expand = False, fill = False, padding = 0)
         table.show()
         for i, param in enumerate(entry["params"]) :
-            if param["entry_style"] == ENTRYSTYLE.SLIDER :
-                slider = table.scale_entry_new \
-                  (
-                    column = 0,
-                    row = i,
-                    text = param["description"],
-                    scale_width = 100,
-                    spinbutton_width = 2,
-                    value = cur_params[param["name"]],
-                    lower = param["lower"],
-                    upper = param["upper"],
-                    step_increment = param.get("step_increment", 1),
-                    page_increment = param.get("page_increment", 10),
-                    digits = 0,
-                    constrain = True,
-                    unconstrained_lower = 0,
-                    unconstrained_upper = 0,
-                    tooltip = None,
-                    help_id = None
-                  )
-                slider.signal_connect \
-                  (
-                    name = "value-changed",
-                    handler = libgimpui2.gimp_double_adjustment_update,
-                    arg = cur_params.field_addr(param["name"])
-                  )
-            elif param["entry_style"] == ENTRYSTYLE.SPINBUTTON :
+            if param["type"] == PARAMTYPE.COLOUR :
                 label = libgimpgtk2.Label.create(param["description"])
                 label.set_alignment(0, 0.5)
                 label.show()
                 table.attach_defaults(label, 0, 1, i, i + 1)
-                adj = libgimpgtk2.Adjustment.create \
+                rgb_elt = cur_params.field_addr(param["name"])
+                selector = ColourSelect.create \
                   (
-                    value = cur_params[param["name"]],
-                    lower = param["lower"],
-                    upper = param["upper"],
-                    step_increment = param.get("step_increment", 1),
-                    page_increment = param.get("page_increment", 10),
-                    page_size = 0 # seems nonzero value is deprecated anyway
+                    ct.cast(rgb_elt, ct.POINTER(GIMP.RGB))[0],
+                    GIMP.COLOUR_SELECTOR_HUE # channel
                   )
-                spinner = libgimpgtk2.SpinButton.create \
-                  (
-                    adjustment = adj,
-                    climb_rate = 10, # ?
-                    digits = 3 # ?
-                  )
-                spinner.show()
-                table.attach_defaults(spinner, 1, 3, i, i + 1)
-                adj.signal_connect \
-                  (
-                    name = "value-changed",
-                    handler = libgimpui2.gimp_double_adjustment_update,
-                    arg = cur_params.field_addr(param["name"])
-                  )
+                selector.show()
+                table.attach_defaults(selector, 1, 3, i, i + 1)
+                selector.signal_connect("color-changed", def_handle_rgb_changed(rgb_elt))
+            elif param["type"] == PARAMTYPE.FLOAT :
+                if param["entry_style"] == ENTRYSTYLE.SLIDER :
+                    slider = table.scale_entry_new \
+                      (
+                        column = 0,
+                        row = i,
+                        text = param["description"],
+                        scale_width = 100,
+                        spinbutton_width = 2,
+                        value = cur_params[param["name"]],
+                        lower = param["lower"],
+                        upper = param["upper"],
+                        step_increment = param.get("step_increment", 1),
+                        page_increment = param.get("page_increment", 10),
+                        digits = 0,
+                        constrain = True,
+                        unconstrained_lower = 0,
+                        unconstrained_upper = 0,
+                        tooltip = None,
+                        help_id = None
+                      )
+                    slider.signal_connect \
+                      (
+                        name = "value-changed",
+                        handler = libgimpui2.gimp_double_adjustment_update,
+                        arg = cur_params.field_addr(param["name"])
+                      )
+                elif param["entry_style"] == ENTRYSTYLE.SPINBUTTON :
+                    label = libgimpgtk2.Label.create(param["description"])
+                    label.set_alignment(0, 0.5)
+                    label.show()
+                    table.attach_defaults(label, 0, 1, i, i + 1)
+                    adj = libgimpgtk2.Adjustment.create \
+                      (
+                        value = cur_params[param["name"]],
+                        lower = param["lower"],
+                        upper = param["upper"],
+                        step_increment = param.get("step_increment", 1),
+                        page_increment = param.get("page_increment", 10),
+                        page_size = 0 # seems nonzero value is deprecated anyway
+                      )
+                    spinner = libgimpgtk2.SpinButton.create \
+                      (
+                        adjustment = adj,
+                        climb_rate = 10, # ?
+                        digits = 3 # ?
+                      )
+                    spinner.show()
+                    table.attach_defaults(spinner, 1, 3, i, i + 1)
+                    adj.signal_connect \
+                      (
+                        name = "value-changed",
+                        handler = libgimpui2.gimp_double_adjustment_update,
+                        arg = cur_params.field_addr(param["name"])
+                      )
+                else :
+                    raise AssertionError("invalid param entry style -- how did you get here?")
+                #end if
             else :
-                raise AssertionError("invalid param entry style -- how did you get here?")
+                raise AssertionError("unsupported param type -- how did you get here?")
             #end if
         #end for
         settings.show()

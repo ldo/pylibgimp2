@@ -151,6 +151,8 @@ libgtk2.gtk_misc_get_padding.restype = None
 
 # from gtk-2.0/gtk/gtkwidget.h:
 
+libgtk2.gtk_widget_set_size_request.argtypes = (ct.c_void_p, ct.c_int, ct.c_int)
+libgtk2.gtk_widget_set_size_request.restype = None
 libgtk2.gtk_widget_show.argtypes = (ct.c_void_p,)
 libgtk2.gtk_widget_show.restype = None
 libgtk2.gtk_widget_destroy.argtypes = (ct.c_void_p,)
