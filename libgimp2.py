@@ -1937,7 +1937,7 @@ def ui_init(preview : bool) :
 #end ui_init
 
 class SpinButton(Widget) :
-    "doesn’t seem to work."
+    "doesn’t seem to work. Not needed anyway."
 
     __slots__ = ()
 
@@ -2303,7 +2303,7 @@ def run_dispatched(name, params) :
                     upper = param["upper"],
                     step_increment = param.get("step_increment", 1),
                     page_increment = param.get("page_increment", 10),
-                    page_size = param.get("page_increment", 10) # ?
+                    page_size = 0 # seems nonzero value is deprecated anyway
                   )
                 spinner = libgimpgtk2.SpinButton.create \
                   (

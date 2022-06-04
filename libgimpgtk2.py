@@ -133,7 +133,7 @@ def g_new(c_type, nr_elts) :
 libgobject2.g_signal_connect_data.argtypes = (ct.c_void_p, ct.c_char_p, ct.c_void_p, ct.c_void_p, ct.c_void_p, GConnectFlags)
 libgobject2.g_signal_connect_data.restype = ct.c_ulong
 
-# from gtk-2.0/gtk/signal.h:
+# from gtk-2.0/gtk/gtksignal.h:
 
 libgtk2.gtk_signal_connect_full.argtypes = (ct.c_void_p, ct.c_char_p, GCallback, GTK.CallbackMarshal, ct.c_void_p, GTK.DestroyNotify, ct.c_int, ct.c_int)
 libgtk2.gtk_signal_connect_full.restype = ct.c_ulong
