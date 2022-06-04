@@ -968,6 +968,12 @@ class ObjID :
             self
     #end __new__
 
+    def __repr__(self) :
+        "show object class name and ID."
+        return \
+            "%s(%d)"% (type(self).__name__, self.id)
+    #end __repr__
+
 #end ObjID
 
 class Image(ObjID) :
