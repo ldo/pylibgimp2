@@ -1936,33 +1936,6 @@ def ui_init(preview : bool) :
     libgimpui2.gimp_ui_init(str_encode(prog_name), preview)
 #end ui_init
 
-class SpinButton(Widget) :
-    "doesn’t seem to work. Not needed anyway."
-
-    __slots__ = ()
-
-    @classmethod
-    def create(celf, adjustment, climb_rate : float, digits : int) :
-        if not isinstance(adjustment, Adjustment) :
-            raise TypeError("adjustment must be an Adjustment")
-        #end if
-        return \
-            celf(libgimpui2.gimp_spin_button_new_(adjustment._gtkobj, climb_rate, digits))
-    #end create
-
-    @classmethod
-    def create_with_range(celf, min : float, max : float, step : float) :
-        return \
-            celf(libgimpui2.gimp_spin_button_new_with_range(min, max, step))
-    #end create_with_range
-
-    def get_value(self) :
-        return \
-            libgimpgtk2.libgtk2.gtk_spin_button_get_value(self._gtkobj)
-    #end get_value
-
-#end SpinButton
-
 class Table(libgimpgtk2.Table) :
 
     __slots__ = ()
