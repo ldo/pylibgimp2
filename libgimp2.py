@@ -852,6 +852,10 @@ libgimpui2.gimp_window_set_transient.argtypes = (ct.c_void_p,)
 
 # from libgimpwidgets/gimpwidgets.h:
 
+libgimpui2.gimp_toggle_button_update.argtypes = (ct.c_void_p, ct.c_void_p)
+libgimpui2.gimp_toggle_button_update.restype = None
+libgimpui2.gimp_radio_button_update.argtypes = (ct.c_void_p, ct.c_void_p)
+libgimpui2.gimp_radio_button_update.restype = None
 libgimpui2.gimp_int_adjustment_update.argtypes = (ct.c_void_p, ct.c_void_p)
 libgimpui2.gimp_int_adjustment_update.restype = None
 libgimpui2.gimp_float_adjustment_update.argtypes = (ct.c_void_p, ct.c_void_p)
@@ -2309,22 +2313,31 @@ def run_dispatched(name, params) :
         main_vbox.pack_start(table, expand = False, fill = False, padding = 0)
         table.show()
         for i, param in enumerate(entry["params"]) :
-            if param["type"] == PARAMTYPE.COLOUR :
+            def labelled_row(wdg) :
                 label = libgimpgtk2.Label.create(param["description"])
                 label.set_alignment(0, 0.5)
                 label.show()
                 table.attach_defaults(label, 0, 1, i, i + 1)
+                table.attach_defaults(wdg, 1, 3, i, i + 1)
+                wdg.show()
+                return \
+                    wdg
+            #end labelled_row
+            if param["type"] == PARAMTYPE.COLOUR :
                 rgb_elt = cur_params.field_addr(param["name"])
-                selector = ColourSelect.create \
+                selector = labelled_row \
                   (
-                    ct.cast(rgb_elt, ct.POINTER(GIMP.RGB))[0],
-                    GIMP.COLOUR_SELECTOR_HUE # channel
+                    ColourSelect.create
+                      (
+                        ct.cast(rgb_elt, ct.POINTER(GIMP.RGB))[0],
+                        GIMP.COLOUR_SELECTOR_HUE # channel
+                      )
                   )
-                selector.show()
-                table.attach_defaults(selector, 1, 3, i, i + 1)
                 selector.signal_connect("color-changed", def_handle_rgb_changed(rgb_elt))
             elif param["type"] == PARAMTYPE.FLOAT :
                 if param["entry_style"] == ENTRYSTYLE.SLIDER :
+                    # Note: fractional step increments don’t seem to work,
+                    # slider tends to get stuck.
                     slider = table.scale_entry_new \
                       (
                         column = 0,
@@ -2350,11 +2363,7 @@ def run_dispatched(name, params) :
                         handler = libgimpui2.gimp_double_adjustment_update,
                         arg = cur_params.field_addr(param["name"])
                       )
-                elif param["entry_style"] == ENTRYSTYLE.SPINBUTTON :
-                    label = libgimpgtk2.Label.create(param["description"])
-                    label.set_alignment(0, 0.5)
-                    label.show()
-                    table.attach_defaults(label, 0, 1, i, i + 1)
+                else :
                     adj = libgimpgtk2.Adjustment.create \
                       (
                         value = cur_params[param["name"]],
@@ -2364,22 +2373,21 @@ def run_dispatched(name, params) :
                         page_increment = param.get("page_increment", 10),
                         page_size = 0 # seems nonzero value is deprecated anyway
                       )
-                    spinner = libgimpgtk2.SpinButton.create \
+                    spinner = labelled_row \
                       (
-                        adjustment = adj,
-                        climb_rate = 10, # ?
-                        digits = 3 # ?
+                        libgimpgtk2.SpinButton.create
+                          (
+                            adjustment = adj,
+                            climb_rate = 10, # ?
+                            digits = 3
+                          )
                       )
-                    spinner.show()
-                    table.attach_defaults(spinner, 1, 3, i, i + 1)
                     adj.signal_connect \
                       (
                         name = "value-changed",
                         handler = libgimpui2.gimp_double_adjustment_update,
                         arg = cur_params.field_addr(param["name"])
                       )
-                else :
-                    raise AssertionError("invalid param entry style -- how did you get here?")
                 #end if
             else :
                 raise AssertionError("unsupported param type -- how did you get here?")
