@@ -86,22 +86,9 @@ class GTK :
 # Routine arg/result types
 #-
 
-libglib2 = ct.cdll.LoadLibrary("libglib-2.0.so.0")
 libgobject2 = ct.cdll.LoadLibrary("libgobject-2.0.so.0")
 libgtk2 = ct.cdll.LoadLibrary("libgtk-x11-2.0.so.0")
 
-# from glib-2.0/glib/gmem.h:
-
-libglib2.g_malloc.argtypes = (ct.c_size_t,)
-libglib2.g_malloc.restype = ct.c_void_p
-libglib2.g_free.argtypes = (ct.c_void_p,)
-libglib2.g_free.restype = None
-
-def g_new(c_type, nr_elts) :
-    "approximate equivalent to g_new() macro in glib-2.0/glib/gmem.h."
-    return \
-        libglib2.g_malloc(ct.sizeof(c_type * nr_elts))
-#end g_new
 
 # from glib-2.0/gobject/gsignal.h:
 
