@@ -2446,7 +2446,8 @@ def run_dispatched(name, params) :
 #end run_dispatched
 
 def main(*, init_proc = None, quit_proc = None, query_proc = None, run_proc = None) :
-    "to be invoked as your plugin mainline."
+    "to be invoked as your plugin mainline. You can omit all args to automatically" \
+    " use the managed-procedures mechanism."
     if init_proc != None :
         c_init_proc = GIMP.InitProc(init_proc)
     else :
