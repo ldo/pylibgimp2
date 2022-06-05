@@ -1915,7 +1915,7 @@ def wrap_run_proc(run_proc) :
         GIMP.RunProc(run_wrapper)
 #end wrap_run_proc
 
-def install_procedure(name : str, blurb : str, help: str, author : str, copyright : str, date : str, item_label : str, image_types : str, type : GIMP.PDBProcType, params, returns) :
+def install_procedure(name : str, blurb : str, help: str, author : str, copyright : str, date : str, item_label : str, image_types : str, type : GIMP.PDBProcType, params = None, returns = None) :
     "installs a procedure in the procedure database. params and returns must be sequences" \
     " of dicts each with type, name and description fields."
     c_name = name.encode()
@@ -2160,7 +2160,7 @@ class Dialog(Widget) :
 
 installed_procedures = {}
 
-def plugin_install(name, *, blurb, help, author, copyright, date, image_types, placement, action, params, returns, use_gegl = False, menu_name, item_label) :
+def plugin_install(name, *, blurb, help, author, copyright, date, image_types, placement, action, params = None, returns = None, use_gegl = False, menu_name, item_label) :
     "registers a plugin action to be dispatched under the given name," \
     " and optionally attached to the given menu item. The params omit the" \
     " initial mandatory ones, which are determined from the placement. The" \
@@ -2179,6 +2179,9 @@ def plugin_install(name, *, blurb, help, author, copyright, date, image_types, p
     #end if
     if params == None :
         params = []
+    #end if
+    if returns != None and len(returns) == 0 :
+        returns = None # GIMP doesn’t like zero-length returns
     #end if
     do_ui = len(params) != 0
     only_handle_paramtypes = (PARAMTYPE.COLOUR, PARAMTYPE.FLOAT)
