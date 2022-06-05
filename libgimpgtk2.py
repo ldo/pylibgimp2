@@ -18,17 +18,10 @@ from gegl import \
     str_decode, \
     GType
 
-CANT_BE_BOTHERED_FOR_NOW = lambda : []
-  # for _fields_ definitions I can’t be bothered to fill in for now
-
 # from glib-2.0/gobject/gclosure.h:
 
 GCallback = ct.CFUNCTYPE(None) # actually might take args and return result, depending on context
 GClosureNotify = ct.CFUNCTYPE(None, ct.c_void_p, ct.c_void_p)
-
-class GClosure(ct.Structure) :
-    _fields_ = CANT_BE_BOTHERED_FOR_NOW()
-#end GClosure
 
 # from glib-2.0/gobject/gsignal.h:
 
@@ -61,21 +54,9 @@ class GTK :
 
     # from gtk-2.0/gtk/gtkwidget.h:
 
-    class Widget(ct.Structure) :
-        _fields_ = CANT_BE_BOTHERED_FOR_NOW()
-    #end Widget
-
     # from gtk-2.0/gtk/gtkadjustment.h:
 
-    class Adjustment(ct.Structure) :
-        _fields_ = CANT_BE_BOTHERED_FOR_NOW()
-    #end Adjustment
-
     # from gtk-2.0/gtk/gtkwindow.h:
-
-    class Window(ct.Structure) :
-        _fields_ = CANT_BE_BOTHERED_FOR_NOW()
-    #end Window
 
     # from gtk-2.0/gtk/gtkdialog.h:
 
@@ -99,13 +80,7 @@ class GTK :
     RESPONSE_APPLY = -10
     RESPONSE_HELP = -11
 
-    class Dialog(ct.Structure) :
-        _fields_ = CANT_BE_BOTHERED_FOR_NOW()
-    #end Dialog
-
 #end GTK
-
-del CANT_BE_BOTHERED_FOR_NOW
 
 #+
 # Routine arg/result types

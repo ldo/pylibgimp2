@@ -468,7 +468,7 @@ class GIMP :
     class Dialog(Structure) :
         _fields_ = \
             [
-                ("parent_instance", GTK.Dialog),
+                ("parent_instance", ct.c_void_p),
             ]
     #end Dialog
 
