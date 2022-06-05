@@ -173,6 +173,18 @@ libgtk2.gtk_label_set_use_markup.restype = None
 libgtk2.gtk_label_set_mnemonic_widget.argtypes = (ct.c_void_p, ct.c_void_p)
 libgtk2.gtk_label_set_mnemonic_widget.restype = None
 
+# from gtk-2.0/gtk/gtktogglebutton.h:
+
+libgtk2.gtk_toggle_button_set_active.argtypes = (ct.c_void_p, ct.c_bool)
+libgtk2.gtk_toggle_button_set_active.restype = None
+libgtk2.gtk_toggle_button_get_active.argtypes = (ct.c_void_p,)
+libgtk2.gtk_toggle_button_get_active.restype = ct.c_bool
+
+# from gtk-2.0/gtk/gtkcheckbutton.h:
+
+libgtk2.gtk_check_button_new_with_label.argtypes = (ct.c_char_p,)
+libgtk2.gtk_check_button_new_with_label.restype = ct.c_void_p
+
 # from gtk-2.0/gtk/gtkcontainer.h:
 
 libgtk2.gtk_container_set_border_width.argtypes = (ct.c_void_p, ct.c_uint)
@@ -337,6 +349,27 @@ class Label(Widget) :
     #end set_mnemonic_widget
 
 #end Label
+
+class Checkbox(Widget) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create_with_label(celf, label) :
+        return \
+            celf(libgtk2.gtk_check_button_new_with_label(str_encode(label)))
+    #end create
+
+    def set_checked(self, checked) :
+        libgtk2.gtk_toggle_button_set_active(self._gtkobj, checked)
+    #end set_value
+
+    def get_checked(self) :
+        return \
+            libgtk2.gtk_toggle_button_get_active(self._gtkobj)
+    #end get_checked
+
+#end Checkbox
 
 class Adjustment(Object) :
 

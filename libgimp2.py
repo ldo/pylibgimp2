@@ -1767,8 +1767,9 @@ def displays_flush() :
 
 class ENTRYSTYLE(enum.Enum) :
     "preferred style of entry UI for each parameter."
-    SLIDER = "slider"
     SPINBUTTON = "spinner"
+    SLIDER = "slider"
+    CHECKBOX = "checkbox"
 #end ENTRYSTYLE
 
 class Params :
@@ -2270,7 +2271,7 @@ def run_dispatched(name, params) :
 
     def do_settings() :
 
-        c_wrap = []
+        c_wrap = [] # strong refs to callbacks kept here
 
         def def_handle_rgb_changed(rgb_param) :
 
@@ -2299,6 +2300,21 @@ def run_dispatched(name, params) :
             return \
                 result
         #end def_handle_int32_changed
+
+        def def_handle_checkbox_changed() :
+
+            def handle_checkbox_changed(wdg, valaddr) :
+                ct.cast(valaddr, ct.POINTER(ct.c_int32))[0] = \
+                    libgimpgtk2.libgtk2.gtk_toggle_button_get_active(wdg)
+            #end handle_checkbox_changed
+
+        #begin def_handle_checkbox_changed
+            result = ct.CFUNCTYPE(None, ct.c_void_p, ct.c_void_p)(handle_checkbox_changed)
+            c_wrap.append(result)
+              # I could reuse the same one each time, but what the hey
+            return \
+                result
+        #end def_handle_checkbox_changed
 
     #begin do_settings
         ui_init(False)
@@ -2377,6 +2393,17 @@ def run_dispatched(name, params) :
                       (
                         name = "value-changed",
                         handler = def_handle_int32_changed(),
+                        arg = cur_params.field_addr(param["name"])
+                      )
+                elif param["entry_style"] == ENTRYSTYLE.CHECKBOX :
+                    button = libgimpgtk2.Checkbox.create_with_label(param["description"])
+                    button.set_checked(cur_params[param["name"]] != 0)
+                    button.show()
+                    table.attach_defaults(button, 0, 3, i, i + 1)
+                    button.signal_connect \
+                      (
+                        name = "toggled",
+                        handler = def_handle_checkbox_changed(),
                         arg = cur_params.field_addr(param["name"])
                       )
                 else :
