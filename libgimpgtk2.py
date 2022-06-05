@@ -52,11 +52,6 @@ class GTK :
     ORIENTATION_HORIZONTAL = 0
     ORIENTATION_VERTICAL = 1
 
-    # from gtk-2.0/gtk/gtkwidget.h:
-
-    # from gtk-2.0/gtk/gtkadjustment.h:
-
-    # from gtk-2.0/gtk/gtkwindow.h:
 
     # from gtk-2.0/gtk/gtkdialog.h:
 
@@ -86,14 +81,7 @@ class GTK :
 # Routine arg/result types
 #-
 
-libgobject2 = ct.cdll.LoadLibrary("libgobject-2.0.so.0")
 libgtk2 = ct.cdll.LoadLibrary("libgtk-x11-2.0.so.0")
-
-
-# from glib-2.0/gobject/gsignal.h:
-
-libgobject2.g_signal_connect_data.argtypes = (ct.c_void_p, ct.c_char_p, ct.c_void_p, ct.c_void_p, ct.c_void_p, GConnectFlags)
-libgobject2.g_signal_connect_data.restype = ct.c_ulong
 
 # from gtk-2.0/gtk/gtksignal.h:
 
@@ -235,7 +223,7 @@ class Object :
             c_handler = GCallback(handler)
         #end if
         self._wrappers.append(c_handler)
-        libgobject2.g_signal_connect_data \
+        gegl.libgobject2.g_signal_connect_data \
             (self._gtkobj, str_encode(name), c_handler, arg, None, 0)
         return \
             self
