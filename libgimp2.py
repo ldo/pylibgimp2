@@ -1803,7 +1803,7 @@ class Params :
         #end if
         self.defs = list(defs)
         for e in self.defs :
-            if e["type"] == PARAMTYPE.FLOAT and "entry_style" not in e :
+            if e["type"] in (PARAMTYPE.INT32, PARAMTYPE.FLOAT) and "entry_style" not in e :
                 e["entry_style"] = ENTRYSTYLE.SPINBUTTON # default
             #end if
         #end for
@@ -2184,7 +2184,7 @@ def plugin_install(name, *, blurb, help, author, copyright, date, image_types, p
         returns = None # GIMP doesn’t like zero-length returns
     #end if
     do_ui = len(params) != 0
-    only_handle_paramtypes = (PARAMTYPE.COLOUR, PARAMTYPE.FLOAT)
+    only_handle_paramtypes = (PARAMTYPE.COLOUR, PARAMTYPE.INT32, PARAMTYPE.FLOAT)
     if do_ui :
         if (
             not all
@@ -2192,7 +2192,7 @@ def plugin_install(name, *, blurb, help, author, copyright, date, image_types, p
                     p["type"] in only_handle_paramtypes
                 and
                     (
-                        p["type"] != PARAMTYPE.FLOAT
+                        p["type"] not in (PARAMTYPE.INT32, PARAMTYPE.FLOAT)
                     or
                         all(k in p for k in ("lower", "upper"))
                     )
@@ -2285,6 +2285,21 @@ def run_dispatched(name, params) :
                 result
         #end def_handle_rgb_changed
 
+        def def_handle_int32_changed() :
+
+            def handle_int32_changed(adj, valaddr) :
+                ct.cast(valaddr, ct.POINTER(ct.c_int32))[0] = \
+                    round(libgimpgtk2.libgtk2.gtk_adjustment_get_value(adj))
+            #end handle_int32_changed
+
+        #begin def_handle_int32_changed
+            result = ct.CFUNCTYPE(None, ct.c_void_p, ct.c_void_p)(handle_int32_changed)
+            c_wrap.append(result)
+              # I could reuse the same one each time, but what the hey
+            return \
+                result
+        #end def_handle_int32_changed
+
     #begin do_settings
         ui_init(False)
         settings = Dialog.create \
@@ -2337,10 +2352,8 @@ def run_dispatched(name, params) :
                       )
                   )
                 selector.signal_connect("color-changed", def_handle_rgb_changed(rgb_elt))
-            elif param["type"] == PARAMTYPE.FLOAT :
+            elif param["type"] == PARAMTYPE.INT32 :
                 if param["entry_style"] == ENTRYSTYLE.SLIDER :
-                    # Note: fractional step increments don’t seem to work,
-                    # slider tends to get stuck.
                     slider = table.scale_entry_new \
                       (
                         column = 0,
@@ -2351,9 +2364,62 @@ def run_dispatched(name, params) :
                         value = cur_params[param["name"]],
                         lower = param["lower"],
                         upper = param["upper"],
+                        step_increment = 1,
+                        page_increment = 10,
+                        digits = 0,
+                        constrain = True,
+                        unconstrained_lower = 0,
+                        unconstrained_upper = 0,
+                        tooltip = None,
+                        help_id = None
+                      )
+                    slider.signal_connect \
+                      (
+                        name = "value-changed",
+                        handler = def_handle_int32_changed(),
+                        arg = cur_params.field_addr(param["name"])
+                      )
+                else :
+                    adj = libgimpgtk2.Adjustment.create \
+                      (
+                        value = cur_params[param["name"]],
+                        lower = param["lower"],
+                        upper = param["upper"],
+                        step_increment = 1,
+                        page_increment = 10,
+                        page_size = 0 # seems nonzero value is deprecated anyway
+                      )
+                    spinner = labelled_row \
+                      (
+                        libgimpgtk2.SpinButton.create
+                          (
+                            adjustment = adj,
+                            climb_rate = 10, # ?
+                            digits = 0
+                          )
+                      )
+                    adj.signal_connect \
+                      (
+                        name = "value-changed",
+                        handler = def_handle_int32_changed(),
+                        arg = cur_params.field_addr(param["name"])
+                      )
+                #end if
+            elif param["type"] == PARAMTYPE.FLOAT :
+                if param["entry_style"] == ENTRYSTYLE.SLIDER :
+                    slider = table.scale_entry_new \
+                      (
+                        column = 0,
+                        row = i,
+                        text = param["description"],
+                        scale_width = 100,
+                        spinbutton_width = 5,
+                        value = cur_params[param["name"]],
+                        lower = param["lower"],
+                        upper = param["upper"],
                         step_increment = param.get("step_increment", 1),
                         page_increment = param.get("page_increment", 10),
-                        digits = 0,
+                        digits = 3, # needs to be nonzero for fractional step increments
                         constrain = True,
                         unconstrained_lower = 0,
                         unconstrained_upper = 0,
