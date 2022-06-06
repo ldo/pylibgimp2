@@ -21,6 +21,7 @@ import colorsys
 import gegl
 from gegl import \
     GType, \
+    GValue, \
     ident, \
     str_encode, \
     str_encode_optional, \
@@ -1770,6 +1771,7 @@ class ENTRYSTYLE(enum.Enum) :
     SPINBUTTON = "spinner"
     SLIDER = "slider"
     CHECKBOX = "checkbox"
+    COMBOBOX = "combobox"
 #end ENTRYSTYLE
 
 class Params :
@@ -1806,6 +1808,11 @@ class Params :
         for e in self.defs :
             if e["type"] in (PARAMTYPE.INT32, PARAMTYPE.FLOAT) and "entry_style" not in e :
                 e["entry_style"] = ENTRYSTYLE.SPINBUTTON # default
+            #end if
+            if e.get("entry_style") == ENTRYSTYLE.COMBOBOX :
+                if not (e["type"] == PARAMTYPE.INT32 and "enums" in e) :
+                    raise KeyError("combo box needs enum values")
+                #end if
             #end if
         #end for
         ct_struct.__name__ = "%s_params" % name
@@ -2047,6 +2054,57 @@ class Frame(Widget) :
 
 #end Frame
 
+class EnumComboBox(Widget) :
+    "a very simple specialization of a GTK combo box, that" \
+    " lets the user choose from a predefined list of text labels" \
+    " associated with integer values, returning the value chosen."
+
+    __slots__ = ("_values_store",)
+
+    @classmethod
+    def create(celf, labels) :
+        if (
+                not isinstance(labels, (list, tuple))
+            or
+                not all(isinstance(v, str) for v in labels)
+        ) :
+            raise TypeError("labels must be sequence of strings")
+        #end if
+        # actually it might be easier just to use a ComboBoxText ...
+        coltype = GType(gegl.G_TYPE_STRING)
+        values_store = libgimpgtk2.libgtk2.gtk_list_store_newv(1, coltype)
+        pos = GTK.TreeIter()
+        colpos = ct.c_int(0)
+        cell = GValue()
+        gegl.libgobject2.g_value_init(cell, gegl.G_TYPE_STRING)
+        for i, name in enumerate(labels) :
+            gegl.libgobject2.g_value_set_static_string(ct.byref(cell), str_encode(name))
+            libgimpgtk2.libgtk2.gtk_list_store_append(values_store, ct.byref(pos))
+            libgimpgtk2.libgtk2.gtk_list_store_set_valuesv \
+                (values_store, ct.byref(pos), colpos, ct.byref(cell), 1)
+        #end for
+        gegl.libgobject2.g_value_unset(cell)
+        result = celf(libgimpgtk2.libgtk2.gtk_combo_box_new_with_model(values_store))
+        result._values_store = values_store
+        renderer = libgimpgtk2.libgtk2.gtk_cell_renderer_text_new()
+        libgimpgtk2.libgtk2.gtk_cell_layout_pack_start(result._gtkobj, renderer, False)
+        libgimpgtk2.libgtk2.gtk_cell_layout_add_attribute \
+          (result._gtkobj, renderer, str_encode("text"), 0)
+        return \
+            result
+    #end create
+
+    def get_active(self) :
+        return \
+            libgimpgtk2.libgtk2.gtk_combo_box_get_active(self._gtkobj)
+    #end get_active
+
+    def set_active(self, index) :
+        libgimpgtk2.libgtk2.gtk_combo_box_set_active(self._gtkobj, index)
+    #end set_active
+
+#end EnumComboBox
+
 class Dialog(Widget) :
     "high-level wrapper for a GIMP dialog. Do not instantiate directly; use the" \
     " create method."
@@ -2195,6 +2253,8 @@ def plugin_install(name, *, blurb, help, author, copyright, date, image_types, p
                     (
                         p["type"] not in (PARAMTYPE.INT32, PARAMTYPE.FLOAT)
                     or
+                        p["type"] == PARAMTYPE.INT32 and "enums" in p
+                    or
                         all(k in p for k in ("lower", "upper"))
                     )
                 for p in params
@@ -2316,6 +2376,21 @@ def run_dispatched(name, params) :
                 result
         #end def_handle_checkbox_changed
 
+        def def_handle_combobox_changed() :
+
+            def handle_combobox_changed(wdg, valaddr) :
+                ct.cast(valaddr, ct.POINTER(ct.c_int32))[0] = \
+                    libgimpgtk2.libgtk2.gtk_combo_box_get_active(wdg)
+            #end handle_combobox_changed
+
+        #begin def_handle_combobox_changed
+            result = ct.CFUNCTYPE(None, ct.c_void_p, ct.c_void_p)(handle_combobox_changed)
+            c_wrap.append(result)
+              # I could reuse the same one each time, but what the hey
+            return \
+                result
+        #end def_handle_combobox_changed
+
     #begin do_settings
         ui_init(False)
         settings = Dialog.create \
@@ -2393,6 +2468,19 @@ def run_dispatched(name, params) :
                       (
                         name = "value-changed",
                         handler = def_handle_int32_changed(),
+                        arg = cur_params.field_addr(param["name"])
+                      )
+                elif param["entry_style"] == ENTRYSTYLE.COMBOBOX :
+                    widget = labelled_row \
+                      (
+                        EnumComboBox.create(param["enums"])
+                      )
+                    sys.stderr.write("initial enum %s is %s\n" % (param["name"], cur_params[param["name"]])) # debug
+                    widget.set_active(cur_params[param["name"]])
+                    widget.signal_connect \
+                      (
+                        name = "changed",
+                        handler = def_handle_combobox_changed(),
                         arg = cur_params.field_addr(param["name"])
                       )
                 elif param["entry_style"] == ENTRYSTYLE.CHECKBOX :

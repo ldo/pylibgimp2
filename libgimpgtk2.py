@@ -12,11 +12,13 @@ functionality to enable implementing a basic UI for plug-ins for GIMP 2.
 import ctypes as ct
 
 # lowest-level GLib/GObject stuff is now in Gabler’s gegl module
+import gegl
 from gegl import \
     str_encode, \
     str_encode_optional, \
     str_decode, \
     GType, \
+    GValue, \
     GCallback
 
 class GTK :
@@ -41,6 +43,17 @@ class GTK :
     ORIENTATION_HORIZONTAL = 0
     ORIENTATION_VERTICAL = 1
 
+    # from gtk-2.0/gtk/gtktreemodel.h:
+
+    class TreeIter(ct.Structure) :
+        _fields_ = \
+            [
+                ("stamp", ct.c_int),
+                ("user_data", ct.c_void_p),
+                ("user_data2", ct.c_void_p),
+                ("user_data3", ct.c_void_p),
+            ]
+    #end TreeIter
 
     # from gtk-2.0/gtk/gtkdialog.h:
 
@@ -87,6 +100,15 @@ libgtk2.gtk_misc_set_padding.argtypes = (ct.c_void_p, ct.c_int, ct.c_int)
 libgtk2.gtk_misc_set_padding.restype = None
 libgtk2.gtk_misc_get_padding.argtypes = (ct.c_void_p, ct.POINTER(ct.c_int), ct.POINTER(ct.c_int))
 libgtk2.gtk_misc_get_padding.restype = None
+
+# from gtk-2.0/gtk/gtkliststore.h:
+
+libgtk2.gtk_list_store_newv.argtypes = (ct.c_int, ct.POINTER(GType))
+libgtk2.gtk_list_store_newv.restype = ct.c_void_p
+libgtk2.gtk_list_store_append.argtypes = (ct.c_void_p, ct.POINTER(GTK.TreeIter))
+libgtk2.gtk_list_store_append.restype = None
+libgtk2.gtk_list_store_set_valuesv.argtypes = (ct.c_void_p, ct.POINTER(GTK.TreeIter), ct.POINTER(ct.c_int), ct.POINTER(GValue), ct.c_int)
+libgtk2.gtk_list_store_set_valuesv.restype = None
 
 # from gtk-2.0/gtk/gtkwidget.h:
 
@@ -176,6 +198,27 @@ libgtk2.gtk_box_pack_start.argtypes = (ct.c_void_p, ct.c_void_p, ct.c_bool, ct.c
 libgtk2.gtk_box_pack_start.restype = None
 libgtk2.gtk_box_pack_end.argtypes = (ct.c_void_p, ct.c_void_p, ct.c_bool, ct.c_bool, ct.c_uint)
 libgtk2.gtk_box_pack_end.restype = None
+
+# from gtk-2.0/gtk/gtkcelllayout.h:
+
+libgtk2.gtk_cell_layout_pack_start.argtypes = (ct.c_void_p, ct.c_void_p, ct.c_bool)
+libgtk2.gtk_cell_layout_pack_start.restype = None
+libgtk2.gtk_cell_layout_add_attribute.argtypes = (ct.c_void_p, ct.c_void_p, ct.c_char_p, ct.c_int)
+libgtk2.gtk_cell_layout_add_attribute.restype = None
+
+# from gtk-2.0/gtk/gtkcombobox.h:
+
+libgtk2.gtk_combo_box_new_with_model.argtypes = (ct.c_void_p,)
+libgtk2.gtk_combo_box_new_with_model.restype = ct.c_void_p
+libgtk2.gtk_combo_box_get_active.argtypes = (ct.c_void_p,)
+libgtk2.gtk_combo_box_get_active.restype = ct.c_int
+libgtk2.gtk_combo_box_set_active.argtypes = (ct.c_void_p, ct.c_int)
+libgtk2.gtk_combo_box_set_active.restype = None
+
+# from gtk-2.0/gtk/gtkcellrenderertext.h:
+
+libgtk2.gtk_cell_renderer_text_new.argtypes = ()
+libgtk2.gtk_cell_renderer_text_new.restype = ct.c_void_p
 
 # from gtk-2.0/gtk/gtkdialog.h:
 
