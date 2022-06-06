@@ -2078,7 +2078,7 @@ class EnumComboBox(Widget) :
         cell = GValue()
         gegl.libgobject2.g_value_init(cell, gegl.G_TYPE_STRING)
         for i, name in enumerate(labels) :
-            gegl.libgobject2.g_value_set_static_string(ct.byref(cell), str_encode(name))
+            gegl.libgobject2.g_value_set_string(ct.byref(cell), str_encode(name))
             libgimpgtk2.libgtk2.gtk_list_store_append(values_store, ct.byref(pos))
             libgimpgtk2.libgtk2.gtk_list_store_set_valuesv \
                 (values_store, ct.byref(pos), colpos, ct.byref(cell), 1)
