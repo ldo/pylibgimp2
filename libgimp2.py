@@ -2475,7 +2475,6 @@ def run_dispatched(name, params) :
                       (
                         EnumComboBox.create(param["enums"])
                       )
-                    sys.stderr.write("initial enum %s is %s\n" % (param["name"], cur_params[param["name"]])) # debug
                     widget.set_active(cur_params[param["name"]])
                     widget.signal_connect \
                       (
