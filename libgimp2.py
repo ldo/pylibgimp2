@@ -22,6 +22,7 @@ import gegl
 from gegl import \
     GType, \
     GValue, \
+    GCallback, \
     ident, \
     str_encode, \
     str_encode_optional, \
@@ -864,6 +865,16 @@ libgimpui2.gimp_float_adjustment_update.restype = None
 libgimpui2.gimp_double_adjustment_update.argtypes = (ct.c_void_p, ct.c_void_p)
 libgimpui2.gimp_double_adjustment_update.restype = None
 # note that gimp_spin_button_new is deprecated
+libgimpui2.gimp_int_radio_group_new.argtypes = (ct.c_bool, ct.c_char_p, GCallback, ct.c_void_p, ct.c_int, ct.c_void_p) # varargs!
+libgimpui2.gimp_int_radio_group_new.restype = ct.c_void_p
+libgimpui2.gimp_int_radio_group_set_active.argtypes = (ct.c_void_p, ct.c_int)
+libgimpui2.gimp_int_radio_group_set_active.restype = None
+libgimpui2.gimp_radio_group_new.argtypes = (ct.c_bool, ct.c_char_p, ct.c_void_p) # varargs!
+libgimpui2.gimp_radio_group_new.restype = ct.c_void_p
+libgimpui2.gimp_radio_group_new2.argtypes = (ct.c_bool, ct.c_char_p, GCallback, ct.c_void_p, ct.c_void_p, ct.c_void_p) # varargs!
+libgimpui2.gimp_radio_group_new2.restype = ct.c_void_p
+libgimpui2.gimp_radio_group_set_active.argtypes = (ct.c_void_p, ct.c_void_p)
+libgimpui2.gimp_radio_group_set_active.restype = None
 
 # from libgimpwidgets/gimpframe.h:
 
@@ -1772,6 +1783,7 @@ class ENTRYSTYLE(enum.Enum) :
     SLIDER = "slider"
     CHECKBOX = "checkbox"
     COMBOBOX = "combobox"
+    RADIOBUTTONS = "radiobuttons"
 #end ENTRYSTYLE
 
 class Params :
@@ -1809,9 +1821,9 @@ class Params :
             if e["type"] in (PARAMTYPE.INT32, PARAMTYPE.FLOAT) and "entry_style" not in e :
                 e["entry_style"] = ENTRYSTYLE.SPINBUTTON # default
             #end if
-            if e.get("entry_style") == ENTRYSTYLE.COMBOBOX :
+            if e.get("entry_style") in (ENTRYSTYLE.COMBOBOX, ENTRYSTYLE.RADIOBUTTONS) :
                 if not (e["type"] == PARAMTYPE.INT32 and "enums" in e) :
-                    raise KeyError("combo box needs enum values")
+                    raise KeyError("combo box and radio buttons need enum values")
                 #end if
             #end if
         #end for
@@ -2105,6 +2117,33 @@ class EnumComboBox(Widget) :
 
 #end EnumComboBox
 
+class EnumRadioGroup(Widget) :
+
+    __slots__ = ()
+
+    @classmethod
+    def create(celf, frame_title, labels, initial, callback, callback_data) :
+        basefunc = libgimpui2.gimp_int_radio_group_new
+          # fixed part of type info already set up
+        func = type(basefunc).from_address(ct.addressof(basefunc))
+          # same entry point, but can have entirely different arg/result types
+        func.restype = basefunc.restype
+        fixedargtypes = basefunc.argtypes[:-1] # drop trailing null-pointer arg, re-added below
+        all_arg_types = list(fixedargtypes)
+        all_args = [True, str_encode(frame_title), callback, callback_data, initial]
+        for index, label in enumerate(labels) :
+            all_args.extend([str_encode(label), index, None])
+            all_arg_types.extend([ct.c_char_p, ct.c_int, ct.c_void_p])
+        #end for
+        all_arg_types.append(ct.c_void_p) # null to mark end of arg list
+        all_args.append(None)
+        func.argtypes = tuple(all_arg_types)
+        return \
+            celf(func(*all_args))
+    #end create
+
+#end EnumRadioGroup
+
 class Dialog(Widget) :
     "high-level wrapper for a GIMP dialog. Do not instantiate directly; use the" \
     " create method."
@@ -2391,6 +2430,24 @@ def run_dispatched(name, params) :
                 result
         #end def_handle_combobox_changed
 
+        def def_handle_radiobutton_changed() :
+
+            def handle_radiobutton_changed(wdg, valaddr) :
+                index = gegl.libgobject2.g_object_get_data(wdg, str_encode("gimp-item-data"))
+                if index == None :
+                    index = 0
+                #end if
+                ct.cast(valaddr, ct.POINTER(ct.c_int32))[0] = index
+            #end handle_radiobutton_changed
+
+        #begin def_handle_radiobutton_changed
+            result = ct.CFUNCTYPE(None, ct.c_void_p, ct.c_void_p)(handle_radiobutton_changed)
+            c_wrap.append(result)
+              # I could reuse the same one each time, but what the hey
+            return \
+                result
+        #end def_handle_radiobutton_changed
+
     #begin do_settings
         ui_init(False)
         settings = Dialog.create \
@@ -2482,6 +2539,17 @@ def run_dispatched(name, params) :
                         handler = def_handle_combobox_changed(),
                         arg = cur_params.field_addr(param["name"])
                       )
+                elif param["entry_style"] == ENTRYSTYLE.RADIOBUTTONS :
+                    widget = EnumRadioGroup.create \
+                      (
+                        frame_title = param["description"],
+                        labels = param["enums"],
+                        initial = cur_params[param["name"]],
+                        callback = ct.cast(def_handle_radiobutton_changed(), GCallback),
+                        callback_data = cur_params.field_addr(param["name"])
+                      )
+                    widget.show()
+                    table.attach_defaults(widget, 0, 3, i, i + 1)
                 elif param["entry_style"] == ENTRYSTYLE.CHECKBOX :
                     button = libgimpgtk2.Checkbox.create_with_label(param["description"])
                     button.set_checked(cur_params[param["name"]] != 0)
