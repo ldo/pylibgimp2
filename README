@@ -41,5 +41,24 @@ To see some small examples of this wrapper in use, have a look at
 my `gimp_filters` project on [`GitLab`](https://gitlab.com/ldo/gimp_filters)
 or [`GitHub`](https://github.com/ldo/gimp_filters).
 
+Further note: I discovered (after having written the bulk of the above
+code) that there is a GObject Introspection type library for GTK 2. So
+I immediately thought that using this would save me a lot of work
+creating my own ctypes-based Python wrappers for GTK classes. However,
+when I try importing this via pygobject into Python 3, I get the
+following warning:
+
+    You have imported the Gtk 2.0 module. Because Gtk 2.0 was not
+    designed for use with introspection some of the interfaces and API
+    will fail. As such this is not supported by the pygobject
+    development team and we encourage you to port your app to Gtk 3 or
+    greater. PyGTK is the recomended python module to use with Gtk 2.0
+
+The problem being, PyGTK was never made available for Python 3. So it
+appears I am better off persevering with my approach of creating my
+own Python wrappers, at least for GTK. GLib and GObject are still at
+version 2.0, even with GTK 3 and 4, so it might be possible to use
+the GEGL typelib, but I haven’t looked at this.
+
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2022 June 2
+2023 April 12
