@@ -6,7 +6,7 @@ and BABL wrappers, obtainable from <https://gitlab.com/ldo/gabler>
 or <https://github.com/ldo/gabler>.
 """
 #+
-# Copyright 2022 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
+# Copyright 2022-2023 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>.
 # Licensed under the GNU Lesser General Public License v2.1 or later.
 #-
 
@@ -78,12 +78,146 @@ class GIMP :
     ADD_COPY_MASK = ADD_MASK_COPY
     ADD_CHANNEL_MASK = ADD_MASK_CHANNEL
 
+    BlendMode = ct.c_uint
+    # values for BlendMode:
+    BLEND_FG_BG_RGB = 0
+    BLEND_FG_BG_HSV = 1
+    BLEND_FG_TRANSPARENT = 2
+    BLEND_CUSTOM = 3
+    # deprecated:
+    FG_BG_RGB_MODE = BLEND_FG_BG_RGB
+    FG_BG_HSV_MODE = BLEND_FG_BG_HSV
+    FG_TRANSPARENT_MODE = BLEND_FG_TRANSPARENT
+    CUSTOM_MODE = BLEND_CUSTOM
+
+    BrushGeneratedShape = ct.c_uint
+    # values for BrushGeneratedShape:
+    BRUSH_GENERATED_CIRCLE = 0
+    BRUSH_GENERATED_SQUARE = 1
+    BRUSH_GENERATED_DIAMOND = 2
+
+    BucketFillMode = ct.c_uint
+    # values for BucketFillMode:
+    BUCKET_FILL_FG = 0
+    BUCKET_FILL_BG = 1
+    BUCKET_FILL_PATTERN = 2
+    # deprecated:
+    FG_BUCKET_FILL = BUCKET_FILL_FG
+    BG_BUCKET_FILL = BUCKET_FILL_BG
+    PATTERN_BUCKET_FILL = BUCKET_FILL_PATTERN
+
+    CapStyle = ct.c_uint
+    # values for CapStyle:
+    CAP_BUTT = 0
+    CAP_ROUND = 1
+    CAP_SQUARE = 2
+
     ChannelOps = ct.c_uint
     # values for ChannelOps:
     CHANNEL_OP_ADD = 0
     CHANNEL_OP_SUBTRACT = 1
     CHANNEL_OP_REPLACE = 2
     CHANNEL_OP_INTERSECT = 3
+
+    ChannelType = ct.c_uint
+    # values for ChannelType:
+    CHANNEL_RED = 0
+    CHANNEL_GREEN = 1
+    CHANNEL_BLUE = 2
+    CHANNEL_GRAY = 3
+    CHANNEL_INDEXED = 4
+    CHANNEL_ALPHA = 5
+    # deprecated:
+    RED_CHANNEL = CHANNEL_RED
+    GREEN_CHANNEL = CHANNEL_GREEN
+    BLUE_CHANNEL = CHANNEL_BLUE
+    GRAY_CHANNEL = CHANNEL_GRAY
+    INDEXED_CHANNEL = CHANNEL_INDEXED
+    ALPHA_CHANNEL = CHANNEL_ALPHA
+
+    CheckSize = ct.c_uint
+    # values for CheckSize:
+    CHECK_SIZE_SMALL_CHECKS = 0
+    CHECK_SIZE_MEDIUM_CHECKS = 1
+    CHECK_SIZE_LARGE_CHECKS = 2
+
+    CheckType = ct.c_uint
+    # values for CheckType:
+    CHECK_TYPE_LIGHT_CHECKS = 0
+    CHECK_TYPE_GRAY_CHECKS = 1
+    CHECK_TYPE_DARK_CHECKS = 2
+    CHECK_TYPE_WHITE_ONLY = 3
+    CHECK_TYPE_GRAY_ONLY = 4
+    CHECK_TYPE_BLACK_ONLY = 5
+
+    CloneType = ct.c_uint
+    # values for CloneType:
+    CLONE_IMAGE = 0
+    CLONE_PATTERN = 1
+    # deprecated:
+    IMAGE_CLONE = CLONE_IMAGE
+    PATTERN_CLONE = CLONE_PATTERN
+
+    ColorTag = ct.c_uint
+    # values for ColorTag:
+    COLOR_TAG_NONE = 0
+    COLOR_TAG_BLUE = 1
+    COLOR_TAG_GREEN = 2
+    COLOR_TAG_YELLOW = 3
+    COLOR_TAG_ORANGE = 4
+    COLOR_TAG_BROWN = 5
+    COLOR_TAG_RED = 6
+    COLOR_TAG_VIOLET = 7
+    COLOR_TAG_GRAY = 8
+
+    ComponentType = ct.c_uint
+    # values for ComponentType:
+    COMPONENT_TYPE_U8 = 100
+    COMPONENT_TYPE_U16 = 200
+    COMPONENT_TYPE_U32 = 300
+    COMPONENT_TYPE_HALF = 500
+    COMPONENT_TYPE_FLOAT = 600
+    COMPONENT_TYPE_DOUBLE = 700
+
+    ConvertPaletteType = ct.c_uint
+    # values for ConvertPaletteType:
+    CONVERT_PALETTE_GENERATE = 0
+    CONVERT_PALETTE_REUSE = 1
+    CONVERT_PALETTE_WEB = 2
+    CONVERT_PALETTE_MONO = 3
+    CONVERT_PALETTE_CUSTOM = 4
+    # deprecated:
+    MAKE_PALETTE = CONVERT_PALETTE_GENERATE
+    REUSE_PALETTE = CONVERT_PALETTE_REUSE
+    WEB_PALETTE = CONVERT_PALETTE_WEB
+    MONO_PALETTE = CONVERT_PALETTE_MONO
+    CUSTOM_PALETTE = CONVERT_PALETTE_CUSTOM
+
+    ConvolveType = ct.c_uint
+    # values for ConvolveType:
+    CONVOLVE_BLUR = 0
+    CONVOLVE_SHARPEN = 1
+    # deprecated:
+    BLUR_CONVOLVE = CONVOLVE_BLUR
+    SHARPEN_CONVOLVE = CONVOLVE_SHARPEN
+
+    DesaturateMode = ct.c_uint
+    # values for DesaturateMode:
+    DESATURATE_LIGHTNESS = 0
+    DESATURATE_LUMA = 1
+    DESATURATE_AVERAGE = 2
+    DESATURATE_LUMINANCE = 3
+    DESATURATE_VALUE = 4
+    # deprecated:
+    DESATURATE_LUMINOSITY = DESATURATE_LUMA
+
+    DodgeBurnType = ct.c_uint
+    # values for DodgeBurnType
+    DODGE_BURN_TYPE_DODGE = 0
+    DODGE_BURN_TYPE_BURN = 1
+    # deprecated:
+    DODGE = DODGE_BURN_TYPE_DODGE
+    BURN = DODGE_BURN_TYPE_BURN
 
     FillType = ct.c_uint
     # values for FillType:
@@ -104,6 +238,111 @@ class GIMP :
     FOREGROUND_EXTRACT_SIOX = 0
     FOREGROUND_EXTRACT_MATTING = 1
 
+    GradientBlendColorSpace = ct.c_uint
+    # values for GradientBlendColorSpace:
+    GRADIENT_BLEND_RGB_PERCEPTUAL = 0
+    GRADIENT_BLEND_RGB_LINEAR = 1
+    GRADIENT_BLEND_CIE_LAB = 2
+
+    GradientSegmentColor = ct.c_uint
+    # values for GradientSegmentColor:
+    GRADIENT_SEGMENT_RGB = 0
+    GRADIENT_SEGMENT_HSV_CCW = 1
+    GRADIENT_SEGMENT_HSV_CW = 2
+
+    GradientSegmentType = ct.c_uint
+    # values for GradientSegmentType:
+    GRADIENT_SEGMENT_LINEAR = 0
+    GRADIENT_SEGMENT_CURVED = 1
+    GRADIENT_SEGMENT_SINE = 2
+    GRADIENT_SEGMENT_SPHERE_INCREASING = 3
+    GRADIENT_SEGMENT_SPHERE_DECREASING = 4
+    GRADIENT_SEGMENT_STEP = 5
+
+    GradientType = ct.c_uint
+    # values for GradientType:
+    GRADIENT_LINEAR = 0
+    GRADIENT_BILINEAR = 1
+    GRADIENT_RADIAL = 2
+    GRADIENT_SQUARE = 3
+    GRADIENT_CONICAL_SYMMETRIC = 4
+    GRADIENT_CONICAL_ASYMMETRIC = 5
+    GRADIENT_SHAPEBURST_ANGULAR = 6
+    GRADIENT_SHAPEBURST_SPHERICAL = 7
+    GRADIENT_SHAPEBURST_DIMPLED = 8
+    GRADIENT_SPIRAL_CLOCKWISE = 9
+    GRADIENT_SPIRAL_ANTICLOCKWISE = 10
+
+    GridStyle = ct.c_uint
+    # values for GridStyle:
+    GRID_DOTS = 0
+    GRID_INTERSECTIONS = 1
+    GRID_ON_OFF_DASH = 2
+    GRID_DOUBLE_DASH = 3
+    GRID_SOLID = 4
+
+    HueRange = ct.c_uint
+    # values for HueRange:
+    HUE_RANGE_ALL = 0
+    HUE_RANGE_RED = 1
+    HUE_RANGE_YELLOW = 2
+    HUE_RANGE_GREEN = 3
+    HUE_RANGE_CYAN = 4
+    HUE_RANGE_BLUE = 5
+    HUE_RANGE_MAGENTA = 6
+    # deprecated:
+    ALL_HUES = HUE_RANGE_ALL
+    RED_HUES = HUE_RANGE_RED
+    YELLOW_HUES = HUE_RANGE_YELLOW
+    GREEN_HUES = HUE_RANGE_GREEN
+    CYAN_HUES = HUE_RANGE_CYAN
+    BLUE_HUES = HUE_RANGE_BLUE
+    MAGENTA_HUES = HUE_RANGE_MAGENTA
+
+    IconType = ct.c_uint
+    # values for IconType:
+    ICON_TYPE_ICON_NAME = 0
+    ICON_TYPE_INLINE_PIXBUF = 1
+    ICON_TYPE_IMAGE_FILE = 2
+    ICON_TYPE_STOCK_ID = ICON_TYPE_ICON_NAME
+
+    ImageBaseType = ct.c_uint
+    # values for ImageBaseType:
+    RGB = 0
+    GRAY = 1
+    INDEXED = 2
+
+    ImageType = ct.c_uint
+    # values for ImageType:
+    RGB_IMAGE = 0
+    RGBA_IMAGE = 1
+    GRAY_IMAGE = 2
+    GRAYA_IMAGE = 3
+    INDEXED_IMAGE = 4
+    INDEXEDA_IMAGE = 5
+
+    InkBlobType = ct.c_uint
+    # values for InkBlobType:
+    INK_BLOB_TYPE_CIRCLE = 0
+    INK_BLOB_TYPE_SQUARE = 1
+    INK_BLOB_TYPE_DIAMOND = 2
+
+    InterpolationType = ct.c_uint
+    # values for InterpolationType:
+    INTERPOLATION_NONE = 0
+    INTERPOLATION_LINEAR = 1
+    INTERPOLATION_CUBIC = 2
+    INTERPOLATION_NOHALO = 3
+    INTERPOLATION_LOHALO = 4
+    # deprecated:
+    INTERPOLATION_LANCZOS = INTERPOLATION_NOHALO
+
+    JoinStyle = ct.c_uint
+    # values for JoinStyle:
+    JOIN_MITER = 0
+    JOIN_ROUND = 1
+    JOIN_BEVEL = 2
+
     MaskApplyMode = ct.c_uint
     # values for MaskApplyMode:
     MASK_APPLY = 0
@@ -116,11 +355,28 @@ class GIMP :
     CLIP_TO_BOTTOM_LAYER = 2
     FLATTEN_IMAGE = 3
 
+    MessageHandlerType = ct.c_uint
+    # values for MessageHandlerType:
+    MESSAGE_BOX = 0
+    CONSOLE = 1
+    ERROR_CONSOLE = 2
+
     OffsetType = ct.c_uint
     # values for OffsetType:
     OFFSET_BACKGROUND = 0
     OFFSET_TRANSPARENT = 1
     OFFSET_WRAP_AROUND = 2
+
+    OrientationType = ct.c_uint
+    # values for OrientationType:
+    ORIENTATION_HORIZONTAL = 0
+    ORIENTATION_VERTICAL = 1
+    ORIENTATION_UNKNOWN = 2
+
+    PaintApplicationMode = ct.c_uint
+    # values for PaintApplicationMode:
+    PAINT_CONSTANT = 0
+    PAINT_INCREMENTAL = 1
 
     PDBArgType = ct.c_uint
     # values for PDBArgType:
@@ -148,14 +404,10 @@ class GIMP :
     PDB_STATUS = 21
     PDB_END = 22
 
-    ImageType = ct.c_uint
-    # values for ImageType:
-    RGB_IMAGE = 0
-    RGBA_IMAGE = 1
-    GRAY_IMAGE = 2
-    GRAYA_IMAGE = 3
-    INDEXED_IMAGE = 4
-    INDEXEDA_IMAGE = 5
+    PDBErrorHandler = ct.c_uint
+    # values for PDBErrorHandler:
+    PDB_ERROR_HANDLER_INTERNAL = 0
+    PDB_ERROR_HANDLER_PLUGIN = 1
 
     PDBProcType = ct.c_uint
     # values for PDBProcType:
@@ -172,11 +424,133 @@ class GIMP :
     PDB_SUCCESS = 3
     PDB_CANCEL = 4
 
+    Precision = ct.c_uint
+    # values for Precision:
+    PRECISION_U8_LINEAR = 100
+    PRECISION_U8_GAMMA = 150
+    PRECISION_U16_LINEAR = 200
+    PRECISION_U16_GAMMA = 250
+    PRECISION_U32_LINEAR = 300
+    PRECISION_U32_GAMMA = 350
+    PRECISION_HALF_LINEAR = 500
+    PRECISION_HALF_GAMMA = 550
+    PRECISION_FLOAT_LINEAR = 600
+    PRECISION_FLOAT_GAMMA = 650
+    PRECISION_DOUBLE_LINEAR = 700
+    PRECISION_DOUBLE_GAMMA = 750
+
+    ProgressCommand = ct.c_uint
+    # values for ProgressCommand:
+    PROGRESS_COMMAND_START = 0
+    PROGRESS_COMMAND_END = 1
+    PROGRESS_COMMAND_SET_TEXT = 2
+    PROGRESS_COMMAND_SET_VALUE = 3
+    PROGRESS_COMMAND_PULSE = 4
+    PROGRESS_COMMAND_GET_WINDOW = 5
+
+    RepeatMode = ct.c_uint
+    # values for RepeatMode:
+    REPEAT_NONE = 0
+    REPEAT_SAWTOOTH = 1
+    REPEAT_TRIANGULAR = 2
+    REPEAT_TRUNCATE = 3
+
+    RotationType = ct.c_uint
+    # values for RotationType:
+    ROTATE_90 = 0
+    ROTATE_180 = 1
+    ROTATE_270 = 2
+
     RunMode = ct.c_uint # first argument to every plugin.
     # values for RunMode:
     RUN_INTERACTIVE = 0
     RUN_NONINTERACTIVE = 1
     RUN_WITH_LAST_VALS = 2
+
+    SelectCriterion = ct.c_uint
+    # values for SelectCriterion:
+    SELECT_CRITERION_COMPOSITE = 0
+    SELECT_CRITERION_R = 1
+    SELECT_CRITERION_G = 2
+    SELECT_CRITERION_B = 3
+    SELECT_CRITERION_H = 4
+    SELECT_CRITERION_S = 5
+    SELECT_CRITERION_V = 6
+    SELECT_CRITERION_A = 7
+    SELECT_CRITERION_LCH_L = 8
+    SELECT_CRITERION_LCH_C = 9
+    SELECT_CRITERION_LCH_H = 10
+
+    SizeType = ct.c_uint
+    # values for SizeType:
+    PIXELS = 0
+    POINTS = 1
+
+    StackTraceMode = ct.c_uint
+    # values for StackTraceMode:
+    STACK_TRACE_NEVER = 0
+    STACK_TRACE_QUERY = 1
+    STACK_TRACE_ALWAYS = 2
+
+    StrokeMethod = ct.c_uint
+    # values for StrokeMethod:
+    STROKE_LINE = 0
+    STROKE_PAINT_METHOD = 1
+
+    TextDirection = ct.c_uint
+    # values for TextDirection:
+    TEXT_DIRECTION_LTR = 0
+    TEXT_DIRECTION_RTL = 1
+    TEXT_DIRECTION_TTB_RTL = 2
+    TEXT_DIRECTION_TTB_RTL_UPRIGHT = 3
+    TEXT_DIRECTION_TTB_LTR = 4
+    TEXT_DIRECTION_TTB_LTR_UPRIGHT = 5
+
+    TextHintStyle = ct.c_uint
+    # values for TextHintStyle:
+    TEXT_HINT_STYLE_NONE = 0
+    TEXT_HINT_STYLE_SLIGHT = 1
+    TEXT_HINT_STYLE_MEDIUM = 2
+    TEXT_HINT_STYLE_FULL = 3
+
+    TextJustification = ct.c_uint
+    # values for TextJustification:
+    TEXT_JUSTIFY_LEFT = 0
+    TEXT_JUSTIFY_RIGHT = 1
+    TEXT_JUSTIFY_CENTER = 2
+    TEXT_JUSTIFY_FILL = 3
+
+    TransferMode = ct.c_uint
+    # values for TransferMode:
+    TRANSFER_SHADOWS = 0
+    TRANSFER_MIDTONES = 1
+    TRANSFER_HIGHLIGHTS = 2
+    # deprecated:
+    SHADOWS = TRANSFER_SHADOWS
+    MIDTONES = TRANSFER_MIDTONES
+    HIGHLIGHTS = TRANSFER_HIGHLIGHTS
+
+    TransformDirection = ct.c_uint
+    # values for TransformDirection:
+    TRANSFORM_FORWARD = 0
+    TRANSFORM_BACKWARD = 1
+
+    TransformResize = ct.c_uint
+    # values for TransformResize:
+    TRANSFORM_RESIZE_ADJUST = 0
+    TRANSFORM_RESIZE_CLIP = 1
+    TRANSFORM_RESIZE_CROP = 2
+    TRANSFORM_RESIZE_CROP_WITH_ASPECT = 3
+
+    Unit = ct.c_uint
+    # values for Unit:
+    UNIT_PIXEL = 0
+    UNIT_INCH = 1
+    UNIT_MM = 2
+    UNIT_POINT = 3
+    UNIT_PICA = 4
+    UNIT_END = 5
+    UNIT_PERCENT = 65536
 
     # from libgimpbase/gimpparasite.h:
 
@@ -332,6 +706,18 @@ class GIMP :
     #end PlugInInfo
 
     # from libgimp/gimpenums.h:
+
+    BrushApplicationMode = ct.c_uint
+    # values for BrushApplicationMode:
+    BRUSH_HARD = 0
+    BRUSH_SOFT = 1
+
+    ConvertDitherType = ct.c_uint
+    # values for ConvertDitherType:
+    CONVERT_DITHER_NONE = 0
+    CONVERT_DITHER_FS = 1
+    CONVERT_DITHER_FS_LOWBLEED = 2
+    CONVERT_DITHER_FIXED = 3
 
     HistogramChannel = ct.c_uint
     # values for HistogramChannel:
@@ -630,6 +1016,117 @@ def def_expect_type(expect_type) :
 libgimp2 = ct.cdll.LoadLibrary("libgimp-2.0.so.0")
 libgimpui2 = ct.cdll.LoadLibrary("libgimpui-2.0.so.0")
 
+# from libgimpbase/gimpbaseenums.h:
+
+libgimp2.gimp_add_mask_type_get_type.restype = GType
+libgimp2.gimp_add_mask_type_get_type.argtypes = ()
+libgimp2.gimp_blend_mode_get_type.restype = GType
+libgimp2.gimp_blend_mode_get_type.argtypes = ()
+libgimp2.gimp_brush_generated_shape_get_type.restype = GType
+libgimp2.gimp_brush_generated_shape_get_type.argtypes = ()
+libgimp2.gimp_bucket_fill_mode_get_type.restype = GType
+libgimp2.gimp_bucket_fill_mode_get_type.argtypes = ()
+libgimp2.gimp_cap_style_get_type.restype = GType
+libgimp2.gimp_cap_style_get_type.argtypes = ()
+libgimp2.gimp_channel_ops_get_type.restype = GType
+libgimp2.gimp_channel_ops_get_type.argtypes = ()
+libgimp2.gimp_channel_type_get_type.restype = GType
+libgimp2.gimp_channel_type_get_type.argtypes = ()
+libgimp2.gimp_check_size_get_type.restype = GType
+libgimp2.gimp_check_size_get_type.argtypes = ()
+libgimp2.gimp_check_type_get_type.restype = GType
+libgimp2.gimp_check_type_get_type.argtypes = ()
+libgimp2.gimp_clone_type_get_type.restype = GType
+libgimp2.gimp_clone_type_get_type.argtypes = ()
+libgimp2.gimp_color_tag_get_type.restype = GType
+libgimp2.gimp_color_tag_get_type.argtypes = ()
+libgimp2.gimp_component_type_get_type.restype = GType
+libgimp2.gimp_component_type_get_type.argtypes = ()
+libgimp2.gimp_convert_palette_type_get_type.restype = GType
+libgimp2.gimp_convert_palette_type_get_type.argtypes = ()
+libgimp2.gimp_convolve_type_get_type.restype = GType
+libgimp2.gimp_convolve_type_get_type.argtypes = ()
+libgimp2.gimp_desaturate_mode_get_type.restype = GType
+libgimp2.gimp_desaturate_mode_get_type.argtypes = ()
+libgimp2.gimp_dodge_burn_type_get_type.restype = GType
+libgimp2.gimp_dodge_burn_type_get_type.argtypes = ()
+libgimp2.gimp_fill_type_get_type.restype = GType
+libgimp2.gimp_fill_type_get_type.argtypes = ()
+libgimp2.gimp_foreground_extract_mode_get_type.restype = GType
+libgimp2.gimp_foreground_extract_mode_get_type.argtypes = ()
+libgimp2.gimp_gradient_blend_color_space_get_type.restype = GType
+libgimp2.gimp_gradient_blend_color_space_get_type.argtypes = ()
+libgimp2.gimp_gradient_segment_color_get_type.restype = GType
+libgimp2.gimp_gradient_segment_color_get_type.argtypes = ()
+libgimp2.gimp_gradient_segment_type_get_type.restype = GType
+libgimp2.gimp_gradient_segment_type_get_type.argtypes = ()
+libgimp2.gimp_gradient_type_get_type.restype = GType
+libgimp2.gimp_gradient_type_get_type.argtypes = ()
+libgimp2.gimp_grid_style_get_type.restype = GType
+libgimp2.gimp_grid_style_get_type.argtypes = ()
+libgimp2.gimp_hue_range_get_type.restype = GType
+libgimp2.gimp_hue_range_get_type.argtypes = ()
+libgimp2.gimp_icon_type_get_type.restype = GType
+libgimp2.gimp_icon_type_get_type.argtypes = ()
+libgimp2.gimp_image_base_type_get_type.restype = GType
+libgimp2.gimp_image_base_type_get_type.argtypes = ()
+libgimp2.gimp_image_type_get_type.restype = GType
+libgimp2.gimp_image_type_get_type.argtypes = ()
+libgimp2.gimp_ink_blob_type_get_type.restype = GType
+libgimp2.gimp_ink_blob_type_get_type.argtypes = ()
+libgimp2.gimp_interpolation_type_get_type.restype = GType
+libgimp2.gimp_interpolation_type_get_type.argtypes = ()
+libgimp2.gimp_join_style_get_type.restype = GType
+libgimp2.gimp_join_style_get_type.argtypes = ()
+libgimp2.gimp_mask_apply_mode_get_type.restype = GType
+libgimp2.gimp_mask_apply_mode_get_type.argtypes = ()
+libgimp2.gimp_merge_type_get_type.restype = GType
+libgimp2.gimp_merge_type_get_type.argtypes = ()
+libgimp2.gimp_message_handler_type_get_type.restype = GType
+libgimp2.gimp_message_handler_type_get_type.argtypes = ()
+libgimp2.gimp_offset_type_get_type.restype = GType
+libgimp2.gimp_offset_type_get_type.argtypes = ()
+libgimp2.gimp_orientation_type_get_type.restype = GType
+libgimp2.gimp_orientation_type_get_type.argtypes = ()
+libgimp2.gimp_paint_application_mode_get_type.restype = GType
+libgimp2.gimp_paint_application_mode_get_type.argtypes = ()
+libgimp2.gimp_pdb_arg_type_get_type.restype = GType
+libgimp2.gimp_pdb_arg_type_get_type.argtypes = ()
+libgimp2.gimp_pdb_error_handler_get_type.restype = GType
+libgimp2.gimp_pdb_error_handler_get_type.argtypes = ()
+libgimp2.gimp_pdb_proc_type_get_type.restype = GType
+libgimp2.gimp_pdb_proc_type_get_type.argtypes = ()
+libgimp2.gimp_pdb_status_type_get_type.restype = GType
+libgimp2.gimp_pdb_status_type_get_type.argtypes = ()
+libgimp2.gimp_precision_get_type.restype = GType
+libgimp2.gimp_precision_get_type.argtypes = ()
+libgimp2.gimp_progress_command_get_type.restype = GType
+libgimp2.gimp_progress_command_get_type.argtypes = ()
+libgimp2.gimp_repeat_mode_get_type.restype = GType
+libgimp2.gimp_repeat_mode_get_type.argtypes = ()
+libgimp2.gimp_rotation_type_get_type.restype = GType
+libgimp2.gimp_rotation_type_get_type.argtypes = ()
+libgimp2.gimp_run_mode_get_type.restype = GType
+libgimp2.gimp_run_mode_get_type.argtypes = ()
+libgimp2.gimp_select_criterion_get_type.restype = GType
+libgimp2.gimp_select_criterion_get_type.argtypes = ()
+libgimp2.gimp_size_type_get_type.restype = GType
+libgimp2.gimp_size_type_get_type.argtypes = ()
+libgimp2.gimp_stack_trace_mode_get_type.restype = GType
+libgimp2.gimp_stack_trace_mode_get_type.argtypes = ()
+libgimp2.gimp_stroke_method_get_type.restype = GType
+libgimp2.gimp_stroke_method_get_type.argtypes = ()
+libgimp2.gimp_text_direction_get_type.restype = GType
+libgimp2.gimp_text_direction_get_type.argtypes = ()
+libgimp2.gimp_text_hint_style_get_type.restype = GType
+libgimp2.gimp_text_hint_style_get_type.argtypes = ()
+libgimp2.gimp_text_justification_get_type.restype = GType
+libgimp2.gimp_text_justification_get_type.argtypes = ()
+libgimp2.gimp_transfer_mode_get_type.restype = GType
+libgimp2.gimp_transfer_mode_get_type.argtypes = ()
+libgimp2.gimp_transform_direction_get_type.restype = GType
+libgimp2.gimp_transform_direction_get_type.argtypes = ()
+
 # from libgimp/gimp.h:
 
 libgimp2.gimp_main.argtypes = (ct.POINTER(GIMP.PlugInInfo), ct.c_int, ct.POINTER(ct.c_char_p))
@@ -706,6 +1203,25 @@ libgimp2.gimp_drawable_foreground_extract.restype = ct.c_bool
 
 libgimp2.gimp_displays_flush.argtypes = ()
 libgimp2.gimp_displays_flush.restype = None
+
+# from libgimp/gimpenums.h:
+
+libgimp2.gimp_brush_application_mode_get_type.argtypes = ()
+libgimp2.gimp_brush_application_mode_get_type.restype = GType
+libgimp2.gimp_convert_dither_type_get_type.argtypes = ()
+libgimp2.gimp_convert_dither_type_get_type.restype = GType
+libgimp2.gimp_histogram_channel_get_type.argtypes = ()
+libgimp2.gimp_histogram_channel_get_type.restype = GType
+libgimp2.gimp_layer_color_space_get_type.argtypes = ()
+libgimp2.gimp_layer_color_space_get_type.restype = GType
+libgimp2.gimp_layer_composite_mode_get_type.argtypes = ()
+libgimp2.gimp_layer_composite_mode_get_type.restype = GType
+libgimp2.gimp_layer_mode_get_type.argtypes = ()
+libgimp2.gimp_layer_mode_get_type.restype = GType
+libgimp2.gimp_enums_init.argtypes = ()
+libgimp2.gimp_enums_init.restype = None
+libgimp2.gimp_enums_get_type_names.argtypes = (ct.POINTER(ct.c_int),)
+libgimp2.gimp_enums_get_type_names.restype = ct.c_void_p # ct.POINTER(ct.c_char_p)
 
 # from libgimp/gimpproceduraldb.h:
 
