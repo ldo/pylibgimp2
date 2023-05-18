@@ -158,17 +158,17 @@ class GIMP :
     IMAGE_CLONE = CLONE_IMAGE
     PATTERN_CLONE = CLONE_PATTERN
 
-    ColorTag = ct.c_uint
-    # values for ColorTag:
-    COLOR_TAG_NONE = 0
-    COLOR_TAG_BLUE = 1
-    COLOR_TAG_GREEN = 2
-    COLOR_TAG_YELLOW = 3
-    COLOR_TAG_ORANGE = 4
-    COLOR_TAG_BROWN = 5
-    COLOR_TAG_RED = 6
-    COLOR_TAG_VIOLET = 7
-    COLOR_TAG_GRAY = 8
+    ColourTag = ct.c_uint
+    # values for ColourTag:
+    COLOUR_TAG_NONE = 0
+    COLOUR_TAG_BLUE = 1
+    COLOUR_TAG_GREEN = 2
+    COLOUR_TAG_YELLOW = 3
+    COLOUR_TAG_ORANGE = 4
+    COLOUR_TAG_BROWN = 5
+    COLOUR_TAG_RED = 6
+    COLOUR_TAG_VIOLET = 7
+    COLOUR_TAG_GRAY = 8
 
     ComponentType = ct.c_uint
     # values for ComponentType:
@@ -238,14 +238,14 @@ class GIMP :
     FOREGROUND_EXTRACT_SIOX = 0
     FOREGROUND_EXTRACT_MATTING = 1
 
-    GradientBlendColorSpace = ct.c_uint
-    # values for GradientBlendColorSpace:
+    GradientBlendColourSpace = ct.c_uint
+    # values for GradientBlendColourSpace:
     GRADIENT_BLEND_RGB_PERCEPTUAL = 0
     GRADIENT_BLEND_RGB_LINEAR = 1
     GRADIENT_BLEND_CIE_LAB = 2
 
-    GradientSegmentColor = ct.c_uint
-    # values for GradientSegmentColor:
+    GradientSegmentColour = ct.c_uint
+    # values for GradientSegmentColour:
     GRADIENT_SEGMENT_RGB = 0
     GRADIENT_SEGMENT_HSV_CCW = 1
     GRADIENT_SEGMENT_HSV_CW = 2
@@ -707,18 +707,18 @@ class GIMP :
 
     # from libgimpconfig/gimpconfigenums.h:
 
-    ColorManagementMode = ct.c_uint
-    # values for ColorManagementMode:
-    COLOR_MANAGEMENT_OFF = 0
-    COLOR_MANAGEMENT_DISPLAY = 1
-    COLOR_MANAGEMENT_SOFTPROOF = 2
+    ColourManagementMode = ct.c_uint
+    # values for ColourManagementMode:
+    COLOUR_MANAGEMENT_OFF = 0
+    COLOUR_MANAGEMENT_DISPLAY = 1
+    COLOUR_MANAGEMENT_SOFTPROOF = 2
 
-    ColorRenderingIntent = ct.c_uint
-    # values for ColorRenderingIntent:
-    COLOR_RENDERING_INTENT_PERCEPTUAL = 0
-    COLOR_RENDERING_INTENT_RELATIVE_COLORIMETRIC = 1
-    COLOR_RENDERING_INTENT_SATURATION = 2
-    COLOR_RENDERING_INTENT_ABSOLUTE_COLORIMETRIC = 3
+    ColourRenderingIntent = ct.c_uint
+    # values for ColourRenderingIntent:
+    COLOUR_RENDERING_INTENT_PERCEPTUAL = 0
+    COLOUR_RENDERING_INTENT_RELATIVE_COLOURIMETRIC = 1
+    COLOUR_RENDERING_INTENT_SATURATION = 2
+    COLOUR_RENDERING_INTENT_ABSOLUTE_COLOURIMETRIC = 3
 
     # from libgimp/gimpenums.h:
 
@@ -772,7 +772,7 @@ class GIMP :
     LAYER_MODE_LIGHTEN_ONLY_LEGACY = 10
     LAYER_MODE_HSV_HUE_LEGACY = 11
     LAYER_MODE_HSV_SATURATION_LEGACY = 12
-    LAYER_MODE_HSL_COLOR_LEGACY = 13
+    LAYER_MODE_HSL_COLOUR_LEGACY = 13
     LAYER_MODE_HSV_VALUE_LEGACY = 14
     LAYER_MODE_DIVIDE_LEGACY = 15
     LAYER_MODE_DODGE_LEGACY = 16
@@ -781,11 +781,11 @@ class GIMP :
     LAYER_MODE_SOFTLIGHT_LEGACY = 19
     LAYER_MODE_GRAIN_EXTRACT_LEGACY = 20
     LAYER_MODE_GRAIN_MERGE_LEGACY = 21
-    LAYER_MODE_COLOR_ERASE_LEGACY = 22
+    LAYER_MODE_COLOUR_ERASE_LEGACY = 22
     LAYER_MODE_OVERLAY = 23
     LAYER_MODE_LCH_HUE = 24
     LAYER_MODE_LCH_CHROMA = 25
-    LAYER_MODE_LCH_COLOR = 26
+    LAYER_MODE_LCH_COLOUR = 26
     LAYER_MODE_LCH_LIGHTNESS = 27
     LAYER_MODE_NORMAL = 28
     LAYER_MODE_BEHIND = 29
@@ -798,7 +798,7 @@ class GIMP :
     LAYER_MODE_LIGHTEN_ONLY = 36
     LAYER_MODE_HSV_HUE = 37
     LAYER_MODE_HSV_SATURATION = 38
-    LAYER_MODE_HSL_COLOR = 39
+    LAYER_MODE_HSL_COLOUR = 39
     LAYER_MODE_HSV_VALUE = 40
     LAYER_MODE_DIVIDE = 41
     LAYER_MODE_DODGE = 42
@@ -816,7 +816,7 @@ class GIMP :
     LAYER_MODE_LUMA_DARKEN_ONLY = 54
     LAYER_MODE_LUMA_LIGHTEN_ONLY = 55
     LAYER_MODE_LUMINANCE = 56
-    LAYER_MODE_COLOR_ERASE = 57
+    LAYER_MODE_COLOUR_ERASE = 57
     LAYER_MODE_ERASE = 58
     LAYER_MODE_MERGE = 59
     LAYER_MODE_SPLIT = 60
