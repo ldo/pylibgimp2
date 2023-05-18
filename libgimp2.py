@@ -921,6 +921,33 @@ class GIMP :
             ]
     #end Dialog
 
+    # from libgimpthumb/gimpthumb-enums.h:
+
+    ThumbFileType = ct.c_uint
+    # values for ThumbFileType:
+    THUMB_FILE_TYPE_NONE = 0
+    THUMB_FILE_TYPE_REGULAR = 1
+    THUMB_FILE_TYPE_FOLDER = 2
+    THUMB_FILE_TYPE_SPECIAL = 3
+
+    ThumbSize = ct.c_uint
+    # values for ThumbSize:
+    THUMB_SIZE_FAIL = 0
+    THUMB_SIZE_NORMAL = 128
+    THUMB_SIZE_LARGE = 256
+
+    ThumbState = ct.c_uint
+    # values for ThumbState:
+    THUMB_STATE_UNKNOWN = 0
+    THUMB_STATE_REMOTE = 1
+    THUMB_STATE_FOLDER = 2
+    THUMB_STATE_SPECIAL = 3
+    THUMB_STATE_NOT_FOUND = 4
+    THUMB_STATE_EXISTS = 5
+    THUMB_STATE_OLD = 6
+    THUMB_STATE_FAILED = 7
+    THUMB_STATE_OK = 8
+
 #end GIMP
 
 def def_c_char_p_encode(save_strs) :
@@ -1077,6 +1104,7 @@ def def_expect_type(expect_type) :
 libgimp2 = ct.cdll.LoadLibrary("libgimp-2.0.so.0")
 libgimpui2 = ct.cdll.LoadLibrary("libgimpui-2.0.so.0")
 libgimpwidgets2 = ct.cdll.LoadLibrary("libgimpwidgets-2.0.so.0")
+libgimpthumb2 = ct.cdll.LoadLibrary("libgimpthumb-2.0.so.0")
 
 # from libgimpbase/gimpbaseenums.h:
 
@@ -1554,6 +1582,15 @@ libgimpui2.gimp_dialog_add_button.argtypes = (ct.c_void_p, ct.c_char_p, ct.c_int
 libgimpui2.gimp_dialog_add_button.restype = ct.c_void_p
 libgimpui2.gimp_dialog_run.argtypes = (ct.c_void_p,)
 libgimpui2.gimp_dialog_run.restype = ct.c_int
+
+# from libgimpthumb/gimpthumb-enums.h:
+
+libgimpthumb2.gimp_thumb_file_type_get_type.restype = GType
+libgimpthumb2.gimp_thumb_file_type_get_type.argtypes = ()
+libgimpthumb2.gimp_thumb_size_get_type.restype = GType
+libgimpthumb2.gimp_thumb_size_get_type.argtypes = ()
+libgimpthumb2.gimp_thumb_state_get_type.restype = GType
+libgimpthumb2.gimp_thumb_state_get_type.argtypes = ()
 
 # from libgimpwidgets/gimphelpui.h:
 
