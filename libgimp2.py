@@ -705,6 +705,21 @@ class GIMP :
         ]
     #end PlugInInfo
 
+    # from libgimpconfig/gimpconfigenums.h:
+
+    ColorManagementMode = ct.c_uint
+    # values for ColorManagementMode:
+    COLOR_MANAGEMENT_OFF = 0
+    COLOR_MANAGEMENT_DISPLAY = 1
+    COLOR_MANAGEMENT_SOFTPROOF = 2
+
+    ColorRenderingIntent = ct.c_uint
+    # values for ColorRenderingIntent:
+    COLOR_RENDERING_INTENT_PERCEPTUAL = 0
+    COLOR_RENDERING_INTENT_RELATIVE_COLORIMETRIC = 1
+    COLOR_RENDERING_INTENT_SATURATION = 2
+    COLOR_RENDERING_INTENT_ABSOLUTE_COLORIMETRIC = 3
+
     # from libgimp/gimpenums.h:
 
     BrushApplicationMode = ct.c_uint
@@ -1126,6 +1141,12 @@ libgimp2.gimp_transfer_mode_get_type.restype = GType
 libgimp2.gimp_transfer_mode_get_type.argtypes = ()
 libgimp2.gimp_transform_direction_get_type.restype = GType
 libgimp2.gimp_transform_direction_get_type.argtypes = ()
+
+# from libgimpconfig/gimpconfigenums.h:
+libgimp2.gimp_color_management_mode_get_type.restype = GType
+libgimp2.gimp_color_management_mode_get_type.argtypes = ()
+libgimp2.gimp_color_rendering_intent_get_type.restype = GType
+libgimp2.gimp_color_rendering_intent_get_type.argtypes = ()
 
 # from libgimp/gimp.h:
 
