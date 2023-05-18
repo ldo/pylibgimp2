@@ -828,6 +828,25 @@ class GIMP :
 
     # from libgimpwidgets/gimpwidgetsenums.h:
 
+    AspectType = ct.c_uint
+    # values for AspectType:
+    ASPECT_SQUARE = 0
+    ASPECT_PORTRAIT = 1
+    ASPECT_LANDSCAPE = 2
+
+    ChainPosition = ct.c_uint
+    # values for ChainPosition:
+    CHAIN_TOP = 0
+    CHAIN_LEFT = 1
+    CHAIN_BOTTOM = 2
+    CHAIN_RIGHT = 3
+
+    ColourAreaType = ct.c_uint
+    # values for ColourAreaType:
+    COLOUR_AREA_FLAT = 0
+    COLOUR_AREA_SMALL_CHECKS = 0
+    COLOUR_AREA_LARGE_CHECKS = 1
+
     ColourSelectorChannel = ct.c_uint
     # values for ColourSelectorChannel:
     COLOUR_SELECTOR_HUE = 0
@@ -846,6 +865,33 @@ class GIMP :
     COLOUR_SELECTOR_MODEL_RGB = 0
     COLOUR_SELECTOR_MODEL_LCH = 1
     COLOUR_SELECTOR_MODEL_HSV = 2
+
+    IntComboBoxLayout = ct.c_uint
+    # values for IntComboBoxLayout:
+    INT_COMBO_BOX_LAYOUT_ICON_ONLY = 0
+    INT_COMBO_BOX_LAYOUT_ABBREVIATED = 1
+    INT_COMBO_BOX_LAYOUT_FULL = 2
+
+    PageSelectorTarget = ct.c_uint
+    # values for PageSelectorTarget:
+    PAGE_SELECTOR_TARGET_LAYERS = 0
+    PAGE_SELECTOR_TARGET_IMAGES = 1
+
+    SizeEntryUpdatePolicy = ct.c_uint
+    # values for SizeEntryUpdatePolicy:
+    SIZE_ENTRY_UPDATE_NONE = 0
+    SIZE_ENTRY_UPDATE_SIZE = 1
+    SIZE_ENTRY_UPDATE_RESOLUTION = 2
+
+    ZoomType = ct.c_uint
+    # values for ZoomType:
+    ZOOM_IN = 0
+    ZOOM_OUT = 1
+    ZOOM_IN_MORE = 2
+    ZOOM_OUT_MORE = 3
+    ZOOM_IN_MAX = 4
+    ZOOM_OUT_MAX = 5
+    ZOOM_TO = 6
 
     # from libgimpwidgets/gimpcolorselector.h:
 
@@ -1030,6 +1076,7 @@ def def_expect_type(expect_type) :
 
 libgimp2 = ct.cdll.LoadLibrary("libgimp-2.0.so.0")
 libgimpui2 = ct.cdll.LoadLibrary("libgimpui-2.0.so.0")
+libgimpwidgets2 = ct.cdll.LoadLibrary("libgimpwidgets-2.0.so.0")
 
 # from libgimpbase/gimpbaseenums.h:
 
@@ -1388,6 +1435,23 @@ libgimpui2.gimp_window_set_transient_for_display.argtypes = (ct.c_void_p, ct.c_u
 libgimpui2.gimp_window_set_transient_for_display.restype = None
 libgimpui2.gimp_window_set_transient.restype = None
 libgimpui2.gimp_window_set_transient.argtypes = (ct.c_void_p,)
+
+# from libgimpwidgets/gimpwidgetsenums.h:
+
+libgimpwidgets2.gimp_aspect_type_get_type.restype = GType
+libgimpwidgets2.gimp_aspect_type_get_type.argtypes = ()
+libgimpwidgets2.gimp_int_combo_box_layout_get_type.restype = GType
+libgimpwidgets2.gimp_int_combo_box_layout_get_type.argtypes = ()
+libgimpwidgets2.gimp_chain_position_get_type.restype = GType
+libgimpwidgets2.gimp_chain_position_get_type.argtypes = ()
+libgimpwidgets2.gimp_color_area_type_get_type.restype = GType
+libgimpwidgets2.gimp_color_area_type_get_type.argtypes = ()
+libgimpwidgets2.gimp_page_selector_target_get_type.restype = GType
+libgimpwidgets2.gimp_page_selector_target_get_type.argtypes = ()
+libgimpwidgets2.gimp_size_entry_update_policy_get_type.restype = GType
+libgimpwidgets2.gimp_size_entry_update_policy_get_type.argtypes = ()
+libgimpwidgets2.gimp_zoom_type_get_type.restype = GType
+libgimpwidgets2.gimp_zoom_type_get_type.argtypes = ()
 
 # from libgimpwidgets/gimpwidgets.h:
 
