@@ -27,19 +27,19 @@ wrappers for the GIMP API.
 
 This package also relies on Gabler, my wrappers for the GEGL and BABL
 libraries, available from [GitLab](https://gitlab.com/ldo/gabler)
-or [GitHub](https://github.com/ldo/gabler).
+or [BitBucket](https://bitbucket.org/ldo17/gabler).
 
-This is still a work in progress. I have only implemented a fraction of
-the wrappers for the full GIMP API, not to mention GTK 2. So far the
-code is complete enough to support my own simple plugins available on
-[GitHub](https://github.com/ldo/gimp_filters). I may or may not continue
-adding to it.
+This is still a work in progress. I have only implemented a fraction
+of the wrappers for the full GIMP API, not to mention GTK 2. So far
+the code is complete enough to support my own simple plugins available
+on [BitBucket](https://bitbucket.org/ldo17/gimp_filters). I may or may
+not continue adding to it.
 
 Anyway, for now, enjoy.
 
 To see some small examples of this wrapper in use, have a look at
 my `gimp_filters` project on [`GitLab`](https://gitlab.com/ldo/gimp_filters)
-or [`GitHub`](https://github.com/ldo/gimp_filters).
+or [BitBucket](https://bitbucket.org/ldo17/gimp_filters).
 
 Further note: I discovered (after having written the bulk of the above
 code) that there is a GObject Introspection type library for GTK 2. So
@@ -61,4 +61,4 @@ version 2.0, even with GTK 3 and 4, so it might be possible to use
 the GEGL typelib, but I haven’t looked at this.
 
 Lawrence D'Oliveiro <ldo@geek-central.gen.nz>
-2023 April 12
+2023 September 27
